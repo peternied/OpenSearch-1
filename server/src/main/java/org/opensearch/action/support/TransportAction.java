@@ -34,13 +34,14 @@ package org.opensearch.action.support;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.subject.Subject;
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.ActionRequest;
 import org.opensearch.action.ActionRequestValidationException;
 import org.opensearch.action.ActionResponse;
 import org.opensearch.common.lease.Releasable;
+import org.opensearch.identity.AuthenticationManager;
+import org.opensearch.identity.IPermissionResult;
+import org.opensearch.identity.ISubject;
 import org.opensearch.common.lease.Releasables;
 import org.opensearch.common.util.concurrent.ThreadContext;
 import org.opensearch.tasks.Task;
@@ -187,19 +188,12 @@ public abstract class TransportAction<Request extends ActionRequest, Response ex
         }
 
         // Verify authorization for the task (AuthZ)
-
-        // Ensure that we have an authenticated subject!
-        final Subject currentSubject = SecurityUtils.getSubject();
-        if (!currentSubject.isAuthenticated()) {
-            listener.onFailure(new RuntimeException("Not allowed without authentication, action name: " + task.getAction()));
-            return;
-        }
-
-        // Check the current subject has access, don't block just log
-        if (currentSubject.isPermitted(task.getAction())) {
-            logger.atInfo().log(currentSubject.getPrincipal() + " is allowed to " + task.getAction());
+        final ISubject currentSubject = taskManager.getAuthenticationManager().getCurrentSubject();
+        final IPermissionResult result = currentSubject.isPermitted(task.getAction());
+        if (result.isAllowed()) {
+            logger.atInfo().log(currentSubject + " is allowed to " + task.getAction());
         } else {
-            logger.atError().log(currentSubject.getPrincipal() + " is NOT allowed to " + task.getAction() + ", but is not being stopped");
+            logger.atError().log(result.getErrorMessage() + ", but is not being stopped");
         }
 
         RequestFilterChain<Request, Response> requestFilterChain = new RequestFilterChain<>(this, logger);
