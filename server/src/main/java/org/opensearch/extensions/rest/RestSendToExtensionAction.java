@@ -14,7 +14,7 @@ import org.opensearch.client.node.NodeClient;
 import org.opensearch.common.io.stream.StreamInput;
 import org.opensearch.extensions.DiscoveryExtension;
 import org.opensearch.extensions.ExtensionsOrchestrator;
-import org.opensearch.identity.ExtensionIdentifierUtils;
+import org.opensearch.identity.ExtensionIdentifier;
 import org.opensearch.rest.BaseRestHandler;
 import org.opensearch.rest.BytesRestResponse;
 import org.opensearch.rest.RestRequest;
@@ -101,11 +101,11 @@ public class RestSendToExtensionAction extends BaseRestHandler {
 
         // TODO: should be replaced with MyShiro calls (fetch user/identity from shiro)
         // String userName = getCurrentSubject();
-
-        // assuming admin user for now until shiro realm is implemented
-        String userName = "admin";
-
-        String principalIdentifier = getIdentifierFromUsername(userName);
+        /* assuming admin user for now until shiro realm is implemented */
+        String entityName = "admin";
+        /* getting extension id for this request which is unique to every extension */
+        String discoveryExtensionId = this.discoveryExtension.getId();
+        ExtensionIdentifier extensionIdentifier = new ExtensionIdentifier(entityName, discoveryExtensionId);
 
         if (uri.startsWith(uriPrefix)) {
             uri = uri.substring(uriPrefix.length());
@@ -115,7 +115,7 @@ public class RestSendToExtensionAction extends BaseRestHandler {
             + " "
             + uri
             + " with owner "
-            + principalIdentifier
+            + extensionIdentifier
             + " to "
             + discoveryExtension;
         logger.info(message);
@@ -173,7 +173,7 @@ public class RestSendToExtensionAction extends BaseRestHandler {
             transportService.sendRequest(
                 discoveryExtension,
                 ExtensionsOrchestrator.REQUEST_REST_EXECUTE_ON_EXTENSION_ACTION,
-                new RestExecuteOnExtensionRequest(method, uri, principalIdentifier),
+                new RestExecuteOnExtensionRequest(method, uri, extensionIdentifier),
                 restExecuteOnExtensionResponseHandler
             );
             try {
@@ -198,14 +198,5 @@ public class RestSendToExtensionAction extends BaseRestHandler {
         }
 
         return channel -> channel.sendResponse(restResponse);
-    }
-
-    /**
-     * Extracts Identifier information based on the username passed in the request header
-     * @param username username of the request owner
-     * @return identifier of the principal
-     */
-    private static String getIdentifierFromUsername(String username) {
-        return ExtensionIdentifierUtils.toIdentifier(username);
     }
 }
