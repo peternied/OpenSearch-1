@@ -36,6 +36,7 @@ Inspired from [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - [Identity] Switch to smaller license header for all identity files ([#4657](https://github.com/opensearch-project/OpenSearch/pull/4657))
 - [Identity] Include scrawfor99 to the identity team ([#4658](https://github.com/opensearch-project/OpenSearch/pull/4658))
 - [Identity] Prototype Internal IdP ([#4659](https://github.com/opensearch-project/OpenSearch/pull/4659))
+- [Identity] Adds Basic Auth mechanism via Internal IdP ([#4798](https://github.com/opensearch-project/OpenSearch/pull/4798))
 
 ### Dependencies
 - Bumps `log4j-core` from 2.18.0 to 2.19.0
