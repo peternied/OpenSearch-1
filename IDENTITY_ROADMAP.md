@@ -26,6 +26,21 @@ The following are the areas of focus to create this minimal set of functionality
 
 [Complexity 5] Allows transitioning into another Subject.  This should be possible with system subjects or interactive user sessions, the default mechanism should use access tokens that are cryptographically secured against tampering.
 
+```mermaid
+sequenceDiagram
+    participant Alice
+    participant Bob
+    Alice->>John: Hello John, how are you?
+    loop Healthcheck
+        John->>John: Fight against hypochondria
+    end
+    Note right of John: Rational thoughts <br/>prevail!
+    John-->>Alice: Great!
+    John->>Bob: How about you?
+    Bob-->>John: Jolly good!
+
+```
+
 ### Access Tokens
 
 - [Complexity 5] APIs, generate token for principal, refresh token, expire all refresh tokens
