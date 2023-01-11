@@ -12,11 +12,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v1
+    - uses: actions/checkout@v2
 
-    - name: Nightly Merge
-      uses: robotology/gh-action-nightly-merge@v1.3.3
+    - uses: robotology/gh-action-nightly-merge@v1.3.3
       with:
         stable_branch: 'main'
         development_branch: 'feature/identity'
