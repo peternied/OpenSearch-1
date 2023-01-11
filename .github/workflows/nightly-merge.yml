@@ -18,6 +18,7 @@ jobs:
       run: |
         git fetch origin main
         git fetch origin feature/identity
+        git checkout origin/feature/identity
         git merge origin/main
         git fetch origin feature/identity
         git checkout --ours CHANGELOG.md
