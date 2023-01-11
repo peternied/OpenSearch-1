@@ -21,5 +21,6 @@ jobs:
         stable_branch: 'main'
         development_branch: 'feature/identity'
         allow_ff: false
+        allow_forks: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
