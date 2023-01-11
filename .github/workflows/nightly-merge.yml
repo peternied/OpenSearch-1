@@ -1,4 +1,4 @@
-name: 'Nightly Merge'
+name: 'Merge from main into feature/identity'
 
 on:
   push:
@@ -7,12 +7,17 @@ on:
   workflow_dispatch:
 
 jobs:
-  nightly-merge:
+  merge-from-main:
 
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
+
+    - name: Git setup
+      run: |
+        git config --global user.email "petern@amazon.com"
+        git config --global user.name "Peter Nied"
 
     - name: Merge from main
       run: |
@@ -29,7 +34,5 @@ jobs:
 
     - name: Commit and push changes
       run: |
-        git config --global user.email "petern@amazon.com"
-        git config --global user.name "Peter Nied"
         git commit -s -m "Nightly merge from 'origin/main' to 'feature/identity'"
         git push origin HEAD:feature/identity
