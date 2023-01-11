@@ -16,6 +16,7 @@ jobs:
 
     - name: Attempt merge
       run: |
+        git fetch origin main
         git fetch origin feature/identity
         git merge origin/main
         git fetch origin feature/identity
