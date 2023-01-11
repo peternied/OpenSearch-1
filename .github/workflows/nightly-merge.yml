@@ -14,11 +14,14 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - uses: robotology/gh-action-nightly-merge@v1.3.3
-      with:
-        stable_branch: 'main'
-        development_branch: 'feature/identity'
-        allow_ff: false
-        allow_forks: true
+    - name: Attempt merge
+      run: |
+        git fetch origin feature/identity
+        git merge origin/main
+        git fetch origin feature/identity
+        git checkout --ours CHANGELOG.md
+        git add CHANGELOG.md  
+        git commit -s -m "Nightly merge from 'origin/main' to 'feature/identity'"
+        git push origin HEAD:feature/identity
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
