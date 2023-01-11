@@ -12,6 +12,9 @@ import org.opensearch.action.ActionListener;
 import org.opensearch.index.translog.transfer.FileSnapshot.TransferFileSnapshot;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Interface for the translog transfer service responsible for interacting with a remote store
@@ -39,5 +42,24 @@ public interface TransferService {
      * @throws IOException the exception while transferring the data
      */
     void uploadBlob(final TransferFileSnapshot fileSnapshot, Iterable<String> remotePath) throws IOException;
+
+    void deleteBlobs(Iterable<String> path, List<String> fileNames) throws IOException;
+
+    /**
+     * Lists the files
+     * @param path : the path to list
+     * @return : the lists of files
+     * @throws IOException the exception while listing the path
+     */
+    Set<String> listAll(Iterable<String> path) throws IOException;
+
+    /**
+     *
+     * @param path  the remote path from where download should be made
+     * @param fileName the name of the file
+     * @return inputstream of the remote file
+     * @throws IOException the exception while reading the data
+     */
+    InputStream downloadBlob(Iterable<String> path, String fileName) throws IOException;
 
 }

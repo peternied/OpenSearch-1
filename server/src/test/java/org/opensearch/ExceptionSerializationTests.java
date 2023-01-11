@@ -47,6 +47,7 @@ import org.opensearch.client.AbstractClientHeadersTestCase;
 import org.opensearch.cluster.NotMasterException;
 import org.opensearch.cluster.action.shard.ShardStateAction;
 import org.opensearch.cluster.block.ClusterBlockException;
+import org.opensearch.cluster.block.IndexCreateBlockException;
 import org.opensearch.cluster.coordination.CoordinationStateRejectedException;
 import org.opensearch.cluster.coordination.NoClusterManagerBlockService;
 import org.opensearch.cluster.decommission.DecommissioningFailedException;
@@ -56,6 +57,7 @@ import org.opensearch.cluster.routing.IllegalShardRoutingStateException;
 import org.opensearch.cluster.routing.ShardRouting;
 import org.opensearch.cluster.routing.ShardRoutingState;
 import org.opensearch.cluster.routing.TestShardRouting;
+import org.opensearch.cluster.routing.UnsupportedWeightedRoutingStateException;
 import org.opensearch.cluster.service.ClusterManagerThrottlingException;
 import org.opensearch.common.ParsingException;
 import org.opensearch.common.Strings;
@@ -864,6 +866,8 @@ public class ExceptionSerializationTests extends OpenSearchTestCase {
         ids.put(164, NodeDecommissionedException.class);
         ids.put(165, ClusterManagerThrottlingException.class);
         ids.put(166, SnapshotInUseDeletionException.class);
+        ids.put(167, UnsupportedWeightedRoutingStateException.class);
+        ids.put(10001, IndexCreateBlockException.class);
 
         Map<Class<? extends OpenSearchException>, Integer> reverse = new HashMap<>();
         for (Map.Entry<Integer, Class<? extends OpenSearchException>> entry : ids.entrySet()) {

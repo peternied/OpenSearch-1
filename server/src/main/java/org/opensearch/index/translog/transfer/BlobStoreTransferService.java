@@ -19,6 +19,8 @@ import org.opensearch.index.translog.transfer.FileSnapshot.TransferFileSnapshot;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -67,5 +69,20 @@ public class BlobStoreTransferService implements TransferService {
         } catch (Exception ex) {
             throw ex;
         }
+    }
+
+    @Override
+    public InputStream downloadBlob(Iterable<String> path, String fileName) throws IOException {
+        return blobStore.blobContainer((BlobPath) path).readBlob(fileName);
+    }
+
+    @Override
+    public void deleteBlobs(Iterable<String> path, List<String> fileNames) throws IOException {
+        blobStore.blobContainer((BlobPath) path).deleteBlobsIgnoringIfNotExists(fileNames);
+    }
+
+    @Override
+    public Set<String> listAll(Iterable<String> path) throws IOException {
+        return blobStore.blobContainer((BlobPath) path).listBlobs().keySet();
     }
 }
