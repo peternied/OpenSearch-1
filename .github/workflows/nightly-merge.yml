@@ -14,18 +14,22 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Attempt merge
+    - name: Merge from main
       run: |
         git fetch origin main
         git fetch origin feature/identity
         git checkout origin/feature/identity
         git merge origin/main
         git fetch origin feature/identity
+
+    - name: Handle conflicts
+      run: |
         git checkout --ours CHANGELOG.md
         git add CHANGELOG.md
+
+    - name: Commit and push changes
+      run: |
         git config --global user.email "petern@amazon.com"
         git config --global user.name "Peter Nied"
         git commit -s -m "Nightly merge from 'origin/main' to 'feature/identity'"
         git push origin HEAD:feature/identity
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
