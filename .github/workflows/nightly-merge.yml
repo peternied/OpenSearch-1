@@ -24,7 +24,7 @@ jobs:
         git fetch origin main
         git fetch origin feature/identity
         git checkout origin/feature/identity
-        git merge origin/main
+        git merge origin/main || true
         git fetch origin feature/identity
 
     - name: Handle conflicts
