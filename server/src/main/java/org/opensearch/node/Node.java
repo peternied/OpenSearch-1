@@ -441,10 +441,7 @@ public class Node implements Closeable {
             // Ensure to initialize Feature Flags via the settings from opensearch.yml
             FeatureFlags.initializeFeatureFlags(settings);
 
-            final IdentityModule identityModule = new IdentityModule(
-                settings,
-                pluginsService.filterPlugins(IdentityPlugin.class)
-            );
+            final IdentityModule identityModule = new IdentityModule(settings, pluginsService.filterPlugins(IdentityPlugin.class));
 
             final Set<DiscoveryNodeRole> additionalRoles = pluginsService.filterPlugins(Plugin.class)
                 .stream()

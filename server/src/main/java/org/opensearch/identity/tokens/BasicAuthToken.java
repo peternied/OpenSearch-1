@@ -11,7 +11,7 @@ package org.opensearch.identity.tokens;
 public final class BasicAuthToken implements AuthToken {
 
     public final static String HEADER_NAME = "Authorization";
-    
+
     private String headerValue;
 
     public BasicAuthToken(String headerValue) {

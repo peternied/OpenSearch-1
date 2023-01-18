@@ -12,7 +12,7 @@ import org.opensearch.identity.Subject;
 
 /**
  * Plugin that provides identity and access control for OpenSearch
- * 
+ *
  * @opensearch.experimental
  */
 public interface IdentityPlugin {
