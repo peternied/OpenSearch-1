@@ -28,14 +28,14 @@ public class IdentityModule {
     /**
      * Gets the Identity Service for this application
      */
-    public static IdentityModule getService() {
+    public static IdentityModule getModule() {
         return IDENTITY_MODULE;
     }
 
     /**
      * Gets the Identity Service for this application
      */
-    public static void setService(final IdentityModule module) {
+    public static void setModule(final IdentityModule module) {
         IDENTITY_MODULE = module;
     }
 
