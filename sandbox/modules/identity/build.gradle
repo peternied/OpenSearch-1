@@ -10,7 +10,7 @@ apply plugin: 'opensearch.internal-cluster-test'
 
 opensearchplugin {
   description 'Plugin for identity features in OpenSearch.'
-  classname 'org.opensearch.identity.IdentityPlugin'
+  classname 'org.opensearch.identity.DefaultIdentityPlugin'
   name project.name
   licenseFile rootProject.file('licenses/APACHE-LICENSE-2.0.txt')
   noticeFile rootProject.file('NOTICE.txt')

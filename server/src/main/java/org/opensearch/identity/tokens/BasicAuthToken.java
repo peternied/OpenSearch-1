@@ -5,20 +5,40 @@
 
 package org.opensearch.identity.tokens;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+
 /**
  * Basic (Base64 encoded) Authentication Token in a http request header
  */
 public final class BasicAuthToken implements AuthToken {
 
     public final static String HEADER_NAME = "Authorization";
+    public final static String TOKEN_IDENIFIER = "Basic";
 
-    private String headerValue;
+    private String user;
+    private String password;
 
-    public BasicAuthToken(String headerValue) {
-        this.headerValue = headerValue;
+    public BasicAuthToken(final String headerValue) {
+        final String base64Encoded = headerValue.substring(TOKEN_IDENIFIER.length()).trim();
+        final byte[] rawDecoded = Base64.getDecoder().decode(base64Encoded);
+        final String usernamepassword = new String(rawDecoded, StandardCharsets.UTF_8);
+
+        final String[] tokenParts = usernamepassword.split(":", 1);
+        if (tokenParts.length != 2) {
+            // TODO: Wrong except type
+            throw new IllegalStateException("Illegally formed basic authorization header " + tokenParts[0]);
+        }
+        user = tokenParts[0];
+        password = tokenParts[1];
     }
 
-    public String getHeaderValue() {
-        return headerValue;
+    public String getUser() {
+        return user;
+    }
+
+    // TODO: Password should not be actually stored this way, but lets handle this in a future PR
+    public String getPassword() {
+        return user;
     }
 }

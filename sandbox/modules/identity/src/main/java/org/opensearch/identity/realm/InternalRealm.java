@@ -8,7 +8,6 @@
 
 package org.opensearch.identity.realm;
 
-import org.apache.cxf.rs.security.jose.jwt.JwtToken;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.AuthenticationToken;
@@ -22,10 +21,9 @@ import org.apache.shiro.realm.AuthenticatingRealm;
 
 import org.opensearch.identity.StringPrincipal;
 import org.opensearch.identity.User;
-import org.opensearch.identity.jwt.BadCredentialsException;
-import org.opensearch.identity.jwt.JwtVerifier;
 
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.List;
 import java.util.Map;
@@ -73,14 +71,12 @@ public class InternalRealm extends AuthenticatingRealm {
         }
 
         public InternalRealm build() {
-            ConcurrentMap<String, User> internalUsers = InternalUsersStore.readUsersAsMap(pathToInternalUsersYaml);
+            final User adminUser = new User();
+            adminUser.setUsername(new StringPrincipal("admin"));
+            adminUser.setBcryptHash("$2a$12$VcCDgh2NDk07JGN0rjGbM.Ad41qVR/YFJcgHp0UGns5JDymv..TOG");
+            ConcurrentMap<String, User> internalUsers = new ConcurrentHashMap<>(Map.of("admin", adminUser));
             return new InternalRealm(name, internalUsers);
         }
-    }
-
-    private void initializeUsersStore(String pathToInternalUsersYaml) {
-        // TODO load this at cluster start
-        internalUsers = InternalUsersStore.readUsersAsMap(pathToInternalUsersYaml);
     }
 
     public User getInternalUser(String principalIdentifier) throws UnknownAccountException {
@@ -134,20 +130,6 @@ public class InternalRealm extends AuthenticatingRealm {
                 // Bad password
                 throw new IncorrectCredentialsException(INCORRECT_CREDENTIALS_MESSAGE);
             }
-        } else if (token instanceof BearerToken) {
-            JwtToken jwtToken;
-
-            // Verify the validity of JWT token
-            try {
-                jwtToken = JwtVerifier.getVerifiedJwtToken(((BearerToken) token).getToken());
-            } catch (BadCredentialsException e) {
-                throw new IncorrectCredentialsException(e.getMessage()); // Invalid Token
-            }
-
-            String subject = jwtToken.getClaims().getSubject();
-
-            // We need to extract the subject here to create an identity subject that can be utilized across the realm
-            return new SimpleAuthenticationInfo(subject, null, realmName);
         }
         // Don't know what to do with this token
         throw new CredentialsException();
@@ -198,10 +180,6 @@ public class InternalRealm extends AuthenticatingRealm {
 
     public void setRealmName(String realmName) {
         this.realmName = realmName;
-    }
-
-    public void setInternalUsersYaml(String internalUsersYaml) {
-        initializeUsersStore(internalUsersYaml);
     }
 
     /**

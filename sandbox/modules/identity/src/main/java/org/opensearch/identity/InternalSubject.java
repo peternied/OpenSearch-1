@@ -6,7 +6,7 @@
  * compatible open source license.
  */
 
-package org.opensearch.identity.authmanager.internal;
+package org.opensearch.identity;
 
 import java.security.Principal;
 import java.util.Objects;

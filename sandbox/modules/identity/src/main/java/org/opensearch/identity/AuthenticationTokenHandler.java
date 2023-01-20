@@ -6,15 +6,16 @@
  * compatible open source license.
  */
 
-package org.opensearch.identity.authmanager.internal;
+package org.opensearch.identity;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.opensearch.identity.tokens.BasicAuthToken;
-import org.opensearch.identity.tokens.BearerAuthToken;
+import org.opensearch.identity.tokens.AuthToken;
 import org.apache.shiro.authc.BearerToken;
+
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -33,7 +34,7 @@ public class AuthenticationTokenHandler {
      * @param authenticationToken the token from which to extract
      * @return the extracted shiro auth token to be used to perform login
      */
-    public static AuthenticationToken extractShiroAuthToken(org.opensearch.identity.tokens.AuthenticationToken authenticationToken) {
+    public static AuthenticationToken extractShiroAuthToken(org.opensearch.identity.tokens.AuthToken authenticationToken) {
         AuthenticationToken authToken = null;
 
         if (authenticationToken instanceof BasicAuthToken) {
@@ -50,32 +51,8 @@ public class AuthenticationTokenHandler {
      */
     private static AuthenticationToken handleBasicAuth(final BasicAuthToken token) {
 
-        final byte[] decodedAuthHeader = Base64.getDecoder().decode(token.getHeaderValue().substring("Basic".length()).trim());
-        String decodedHeader = new String(decodedAuthHeader, StandardCharsets.UTF_8);
+        logger.info("Logging in as: " + token.getUser());
 
-        final int firstColonIndex = decodedHeader.indexOf(':');
-
-        String username = null;
-        String password = null;
-
-        if (firstColonIndex > 0) {
-            username = decodedHeader.substring(0, firstColonIndex);
-
-            if (decodedHeader.length() - 1 != firstColonIndex) {
-                password = decodedHeader.substring(firstColonIndex + 1);
-            } else {
-                // blank password
-                password = "";
-            }
-        }
-
-        if (username == null || password == null) {
-            logger.warn("Invalid 'Authorization' header, send 401 and 'WWW-Authenticate Basic'");
-            return null;
-        }
-
-        logger.info("Logging in as: " + username);
-
-        return new UsernamePasswordToken(username, password);
+        return new UsernamePasswordToken(token.getUser(), token.getPassword());
     }
 }

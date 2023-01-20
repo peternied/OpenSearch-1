@@ -50,6 +50,10 @@ import org.opensearch.common.xcontent.XContentBuilder;
 import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.core.internal.io.Streams;
 import org.opensearch.http.HttpServerTransport;
+import org.opensearch.identity.IdentityModule;
+import org.opensearch.identity.Subject;
+import org.opensearch.identity.tokens.AuthToken;
+import org.opensearch.identity.tokens.RestTokenExtractor;
 import org.opensearch.indices.breaker.CircuitBreakerService;
 import org.opensearch.usage.UsageService;
 
@@ -395,6 +399,9 @@ public class RestController implements HttpServerTransport.Dispatcher {
                         return;
                     }
                 } else {
+                    if (!handleAuthenticateUser(request, channel)) {
+                        return;
+                    }
                     dispatchRequest(request, channel, handler);
                     return;
                 }
@@ -503,6 +510,37 @@ public class RestController implements HttpServerTransport.Dispatcher {
             builder.endObject();
             channel.sendResponse(new BytesRestResponse(BAD_REQUEST, builder));
         }
+    }
+
+    /**
+     * Attempts to extracts auth token and login.
+     * 
+     * @returns false if there was an error and the request should not continue being dispatched
+     * */
+    private boolean handleAuthenticateUser(final RestRequest request, final RestChannel channel) {    
+        try {
+            final AuthToken token = RestTokenExtractor.extractToken(request);
+            // If no token was found, continue executing the request
+            if (token == null) {
+                return true;
+            }
+            final Subject currentSubject = IdentityModule.getModule().getSubject();
+            currentSubject.login(token);
+        } catch (final Exception e) {
+            try {
+                final BytesRestResponse bytesRestResponse = BytesRestResponse.createSimpleErrorResponse(
+                    channel,
+                    RestStatus.UNAUTHORIZED,
+                    e.getMessage()
+                );
+                channel.sendResponse(bytesRestResponse);
+            } catch (final Exception _ignored) {
+                // TODO: clean this up
+            }
+            return false;
+        }
+
+        return true;
     }
 
     /**
