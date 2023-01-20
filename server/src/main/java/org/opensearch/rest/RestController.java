@@ -526,6 +526,7 @@ public class RestController implements HttpServerTransport.Dispatcher {
             }
             final Subject currentSubject = IdentityModule.getModule().getSubject();
             currentSubject.login(token);
+            logger.info("Logged in as user " + currentSubject);
         } catch (final Exception e) {
             try {
                 final BytesRestResponse bytesRestResponse = BytesRestResponse.createSimpleErrorResponse(

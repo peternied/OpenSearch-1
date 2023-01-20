@@ -30,15 +30,8 @@ public class InternalSubject implements Subject {
     @Override
     public Principal getPrincipal() {
         final Object o = shiroSubject.getPrincipal();
-
-        if (o == null) {
-            return null;
-        }
-
-        if (o instanceof Principal) {
-            return (Principal) o;
-        }
-
+        if (o == null) return null;
+        if (o instanceof Principal) return (Principal) o;
         return () -> o.toString();
     }
 
@@ -57,7 +50,7 @@ public class InternalSubject implements Subject {
 
     @Override
     public String toString() {
-        return "InternalSubject (principal=" + getPrincipal() + ")";
+        return "InternalSubject(principal=" + getPrincipal() + ")";
     }
 
     /**

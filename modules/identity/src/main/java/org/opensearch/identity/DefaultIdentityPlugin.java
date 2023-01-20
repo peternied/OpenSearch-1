@@ -24,7 +24,6 @@ public final class DefaultIdentityPlugin extends Plugin implements IdentityPlugi
 
     private volatile Settings settings;
 
-    @SuppressWarnings("removal")
     public DefaultIdentityPlugin(final Settings settings) {
         this.settings = settings;
 
