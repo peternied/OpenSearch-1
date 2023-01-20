@@ -27,7 +27,7 @@ public abstract class AbstractIdentityTestCase extends OpenSearchIntegTestCase {
 
     @Override
     protected Collection<Class<? extends Plugin>> nodePlugins() {
-        return List.of(IdentityPlugin.class, Netty4ModulePlugin.class);
+        return List.of(DefaultIdentityPlugin.class, Netty4ModulePlugin.class);
     }
 
     @Override
@@ -45,7 +45,6 @@ public abstract class AbstractIdentityTestCase extends OpenSearchIntegTestCase {
             .put(HttpTransportSettings.SETTING_CORS_ENABLED.getKey(), true)
             .put(HttpTransportSettings.SETTING_CORS_ALLOW_ORIGIN.getKey(), CorsHandler.ANY_ORIGIN)
             .put(HttpTransportSettings.SETTING_CORS_ALLOW_CREDENTIALS.getKey(), true)
-            .put(ConfigConstants.IDENTITY_ENABLED, true)
             .build();
     }
 }

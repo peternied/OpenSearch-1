@@ -9,11 +9,8 @@
 package org.opensearch.identity;
 
 import com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope;
-import org.opensearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.opensearch.action.admin.cluster.node.info.NodeInfo;
 import org.opensearch.action.admin.cluster.state.ClusterStateResponse;
-import org.opensearch.cluster.health.ClusterHealthStatus;
-import org.opensearch.cluster.health.ClusterIndexHealth;
 import org.opensearch.common.network.NetworkModule;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.plugins.Plugin;
@@ -82,13 +79,12 @@ public abstract class HttpSmokeTestCaseWithIdentity extends OpenSearchIntegTestC
             .put(super.nodeSettings(nodeOrdinal))
             .put(NetworkModule.TRANSPORT_TYPE_KEY, nodeTransportTypeKey)
             .put(NetworkModule.HTTP_TYPE_KEY, nodeHttpTypeKey)
-            .put(ConfigConstants.IDENTITY_ENABLED, true)
             .build();
     }
 
     @Override
     protected Collection<Class<? extends Plugin>> nodePlugins() {
-        return Arrays.asList(getTestTransportPlugin(), Netty4ModulePlugin.class, NioTransportPlugin.class, IdentityPlugin.class);
+        return Arrays.asList(getTestTransportPlugin(), Netty4ModulePlugin.class, NioTransportPlugin.class, DefaultIdentityPlugin.class);
     }
 
     @Override
@@ -126,17 +122,4 @@ public abstract class HttpSmokeTestCaseWithIdentity extends OpenSearchIntegTestC
 
         Thread.sleep(1000);
     }
-
-    protected void ensureIdentityIndexIsGreen() {
-        ClusterHealthResponse clusterHealthResponse = client().admin().cluster().prepareHealth().setClusterManagerNodeTimeout("1s").get();
-
-        assertTrue(
-            ConfigConstants.IDENTITY_DEFAULT_CONFIG_INDEX + " index exists",
-            clusterHealthResponse.getIndices().containsKey(ConfigConstants.IDENTITY_DEFAULT_CONFIG_INDEX)
-        );
-
-        ClusterIndexHealth identityIndexHealth = clusterHealthResponse.getIndices().get(ConfigConstants.IDENTITY_DEFAULT_CONFIG_INDEX);
-        assertEquals(ClusterHealthStatus.GREEN, identityIndexHealth.getStatus());
-    }
-
 }

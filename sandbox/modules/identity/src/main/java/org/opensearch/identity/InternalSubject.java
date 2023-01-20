@@ -12,7 +12,6 @@ import java.security.Principal;
 import java.util.Objects;
 
 import org.opensearch.identity.tokens.AuthToken;
-import org.opensearch.identity.Subject;
 
 /**
  * Implementation of subject that is always authenticated
@@ -66,7 +65,7 @@ public class InternalSubject implements Subject {
      */
     public void login(AuthToken authenticationToken) {
 
-        org.apache.shiro.authc.AuthenticationToken authToken = AuthenticationTokenHandler.extractShiroAuthToken(authenticationToken);
+        org.apache.shiro.authc.AuthenticationToken authToken = ShiroAuthTokenHandler.translateAuthToken(authenticationToken);
 
         // Login via shiro realm.
         shiroSubject.login(authToken);

@@ -12,14 +12,13 @@ import org.apache.shiro.authc.UsernamePasswordToken;
 import org.hamcrest.MatcherAssert;
 import org.opensearch.identity.tokens.AuthToken;
 import org.opensearch.identity.tokens.BasicAuthToken;
-import org.opensearch.identity.authmanager.internal.AuthenticationTokenHandler;
 import org.opensearch.test.OpenSearchTestCase;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
-public class AuthenticationTokenHandlerTests extends OpenSearchTestCase {
+public class ShiroAuthTokenHandlerTests extends OpenSearchTestCase {
 
     public void testShouldExtractBasicAuthTokenSuccessfully() {
 
@@ -27,7 +26,7 @@ public class AuthenticationTokenHandlerTests extends OpenSearchTestCase {
 
         AuthToken authToken = new BasicAuthToken(authHeader);
 
-        UsernamePasswordToken usernamePasswordToken = (UsernamePasswordToken) AuthenticationTokenHandler.extractShiroAuthToken(authToken);
+        UsernamePasswordToken usernamePasswordToken = (UsernamePasswordToken) ShiroAuthTokenHandler.translateAuthToken(authToken);
 
         MatcherAssert.assertThat(usernamePasswordToken, notNullValue());
         MatcherAssert.assertThat(usernamePasswordToken.getUsername(), equalTo("admin"));
@@ -41,7 +40,7 @@ public class AuthenticationTokenHandlerTests extends OpenSearchTestCase {
 
         AuthToken authToken = new BasicAuthToken(authHeader);
 
-        UsernamePasswordToken usernamePasswordToken = (UsernamePasswordToken) AuthenticationTokenHandler.extractShiroAuthToken(authToken);
+        UsernamePasswordToken usernamePasswordToken = (UsernamePasswordToken) ShiroAuthTokenHandler.translateAuthToken(authToken);
 
         MatcherAssert.assertThat(usernamePasswordToken, notNullValue());
         MatcherAssert.assertThat(usernamePasswordToken.getUsername(), equalTo("test"));
@@ -53,14 +52,14 @@ public class AuthenticationTokenHandlerTests extends OpenSearchTestCase {
 
         AuthToken authToken = new BasicAuthToken(authHeader);
 
-        UsernamePasswordToken usernamePasswordToken = (UsernamePasswordToken) AuthenticationTokenHandler.extractShiroAuthToken(authToken);
+        UsernamePasswordToken usernamePasswordToken = (UsernamePasswordToken) ShiroAuthTokenHandler.translateAuthToken(authToken);
 
         MatcherAssert.assertThat(usernamePasswordToken, nullValue());
     }
 
     public void testShouldReturnNullWhenExtractingNullToken() {
 
-        org.apache.shiro.authc.AuthenticationToken shiroAuthToken = AuthenticationTokenHandler.extractShiroAuthToken(null);
+        org.apache.shiro.authc.AuthenticationToken shiroAuthToken = ShiroAuthTokenHandler.translateAuthToken(null);
 
         MatcherAssert.assertThat(shiroAuthToken, nullValue());
     }

@@ -20,7 +20,6 @@ import org.opensearch.plugins.NetworkPlugin;
 import org.opensearch.plugins.Plugin;
 import org.opensearch.test.OpenSearchIntegTestCase;
 import org.opensearch.test.OpenSearchIntegTestCase.ClusterScope;
-import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.transport.Transport;
 import org.opensearch.transport.TransportInterceptor;
 import org.opensearch.transport.TransportMessageListener;
@@ -71,12 +70,6 @@ public class BasicAuthenticationIT extends HttpSmokeTestCaseWithIdentity {
 
                             Map<String, String> tcHeaders = threadContext.getHeaders();
                             if (expectedActionName.equals(action)) {
-                                if (tcHeaders.containsKey(ThreadContextConstants.OPENSEARCH_AUTHENTICATION_TOKEN_HEADER)) {
-                                    interceptedTokens.put(
-                                        request.getParentTask().getNodeId(),
-                                        tcHeaders.get(ThreadContextConstants.OPENSEARCH_AUTHENTICATION_TOKEN_HEADER)
-                                    );
-                                }
                             }
                             sender.sendRequest(connection, action, request, options, handler);
                         }
@@ -129,26 +122,6 @@ public class BasicAuthenticationIT extends HttpSmokeTestCaseWithIdentity {
 
         TransportService dataNodeService = internalCluster().getInstance(TransportService.class, dataNode);
         transportServices.add(dataNodeService);
-
-        for (TransportService service : transportServices) {
-            TransportMessageListener listener = new TransportMessageListener() {
-                @Override
-                public void onRequestReceived(long requestId, String action) {
-                    final ThreadPool threadPool = internalCluster().getInstance(ThreadPool.class, service.getLocalNode().getName());
-                    Map<String, String> tcHeaders = threadPool.getThreadContext().getHeaders();
-                    if (expectedActionName.equals(action)) {
-                        if (tcHeaders.containsKey(ThreadContextConstants.OPENSEARCH_AUTHENTICATION_TOKEN_HEADER)) {
-                            interceptedTokens.put(
-                                service.getLocalNode().getId(),
-                                tcHeaders.get(ThreadContextConstants.OPENSEARCH_AUTHENTICATION_TOKEN_HEADER)
-                            );
-                        }
-                    }
-                }
-            };
-            listenerMap.put(service.getLocalNode().getId(), listener);
-            service.addMessageListener(listener);
-        }
 
         Request request = new Request("GET", "/_cluster/health");
         RequestOptions options = RequestOptions.DEFAULT.toBuilder().addHeader("Authorization", "Basic YWRtaW46YWRtaW4=").build(); // admin:admin

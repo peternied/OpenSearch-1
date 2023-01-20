@@ -5,6 +5,7 @@ import org.opensearch.rest.RestRequest;
 import java.util.Collections;
 import java.util.Optional;
 
+/** */
 public class RestTokenExtractor {
 
     public final static String AUTH_HEADER_NAME = "Authorization";
