@@ -54,7 +54,6 @@ import java.util.function.UnaryOperator;
 public final class DefaultIdentityPlugin extends Plugin implements IdentityPlugin, ActionPlugin, NetworkPlugin, SystemIndexPlugin, ClusterPlugin {
     private volatile Logger log = LogManager.getLogger(this.getClass());
 
-    private final boolean enabled;
     private volatile Settings settings;
 
     private volatile Path configPath;
@@ -66,13 +65,6 @@ public final class DefaultIdentityPlugin extends Plugin implements IdentityPlugi
 
     @SuppressWarnings("removal")
     public DefaultIdentityPlugin(final Settings settings, final Path configPath) {
-        enabled = isEnabled(settings);
-
-        if (!enabled) {
-            log.warn("Identity module is disabled.");
-            return;
-        }
-
         this.configPath = configPath;
 
         if (this.configPath != null) {
@@ -82,19 +74,11 @@ public final class DefaultIdentityPlugin extends Plugin implements IdentityPlugi
         }
 
         this.settings = settings;
-
-        Factory<SecurityManager> factory = new IniSecurityManagerFactory("classpath:shiro.ini");
-        SecurityManager securityManager = factory.getInstance();
-        SecurityUtils.setSecurityManager(securityManager);
-    }
-
-    private static boolean isEnabled(final Settings settings) {
-        return settings.getAsBoolean(ConfigConstants.IDENTITY_ENABLED, false);
     }
 
     @Override
     public void onNodeStarted() {
-        log.info("Node started");
+        log.info("Node started " + getSubject());
     }
 
     @Override
@@ -122,9 +106,25 @@ public final class DefaultIdentityPlugin extends Plugin implements IdentityPlugi
 
         final List<Object> components = new ArrayList<Object>();
 
-        if (!enabled) {
-            return components;
+        log.info("createComponents");
+        try {
+            try {
+                Method method = getClass().getMethod("setThreadPool", ThreadPool.class);
+                method.invoke(this, threadPool);
+                log.info("setThreadPool worked?");
+            } catch (final NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            }
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
         }
+
+        Factory<SecurityManager> factory = new IniSecurityManagerFactory("classpath:shiro.ini");
+        SecurityManager securityManager = factory.getInstance();
+        SecurityUtils.setSecurityManager(securityManager);
+
+        log.info("createComponents " + getSubject());
+
 
         return components;
     }

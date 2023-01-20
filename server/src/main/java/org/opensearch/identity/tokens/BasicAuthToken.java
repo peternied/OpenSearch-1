@@ -13,7 +13,6 @@ import java.util.Base64;
  */
 public final class BasicAuthToken implements AuthToken {
 
-    public final static String HEADER_NAME = "Authorization";
     public final static String TOKEN_IDENIFIER = "Basic";
 
     private String user;
@@ -24,7 +23,7 @@ public final class BasicAuthToken implements AuthToken {
         final byte[] rawDecoded = Base64.getDecoder().decode(base64Encoded);
         final String usernamepassword = new String(rawDecoded, StandardCharsets.UTF_8);
 
-        final String[] tokenParts = usernamepassword.split(":", 1);
+        final String[] tokenParts = usernamepassword.split(":", 2);
         if (tokenParts.length != 2) {
             // TODO: Wrong except type
             throw new IllegalStateException("Illegally formed basic authorization header " + tokenParts[0]);

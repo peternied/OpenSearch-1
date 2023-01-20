@@ -61,6 +61,7 @@ public class IdentityModule {
         }
 
         logger.info("Identity module loaded with " + identityPlugin.getClass().getName());
+        // logger.info("Current subject " + getSubject());
     }
 
     /**

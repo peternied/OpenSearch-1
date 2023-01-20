@@ -7,6 +7,8 @@ import java.util.Optional;
 
 public class RestTokenExtractor {
 
+    public final static String AUTH_HEADER_NAME = "Authorization";
+
     /**
      * Given a rest request it will extract authentication token
      * 
@@ -16,7 +18,7 @@ public class RestTokenExtractor {
 
         // Extract authentication information from headers
         final Optional<String> authHeaderValue = request.getHeaders()
-            .getOrDefault(BasicAuthToken.HEADER_NAME, Collections.emptyList())
+            .getOrDefault(AUTH_HEADER_NAME, Collections.emptyList())
             .stream()
             .findFirst();
 
