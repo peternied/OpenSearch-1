@@ -6,13 +6,5 @@
  * compatible open source license.
  */
 
+/** Classes for the authentication tokens in OpenSearch */
 package org.opensearch.identity.tokens;
-
-/**
- * Interface for all token formats to support to authenticate user such as UserName/Password tokens, Access tokens, and more.
- *
- * @opensearch.experimental
- */
-public interface AuthToken {
-
-}

@@ -1,3 +1,10 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
+ */
 package org.opensearch.identity.tokens;
 
 import org.opensearch.rest.RestRequest;
@@ -5,7 +12,9 @@ import org.opensearch.rest.RestRequest;
 import java.util.Collections;
 import java.util.Optional;
 
-/** */
+/**
+ * Extracts tokens from RestRequests used for authentication
+ */
 public class RestTokenExtractor {
 
     public final static String AUTH_HEADER_NAME = "Authorization";
