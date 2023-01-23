@@ -9,7 +9,6 @@
 package org.opensearch.identity.shiro;
 
 import org.opensearch.identity.Subject;
-import org.opensearch.identity.shiro.realm.InternalRealm;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opensearch.plugins.IdentityPlugin;
@@ -17,7 +16,6 @@ import org.opensearch.common.settings.Settings;
 import org.opensearch.plugins.Plugin;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.mgt.SecurityManager;
-import org.apache.shiro.mgt.DefaultSecurityManager;
 
 /**
  * Identity implementation with Shiro
@@ -32,7 +30,7 @@ public final class ShiroIdentityPlugin extends Plugin implements IdentityPlugin 
     public ShiroIdentityPlugin(final Settings settings) {
         this.settings = settings;
 
-        SecurityManager securityManager = new DefaultSecurityManager(InternalRealm.INSTANCE);
+        SecurityManager securityManager = new OpenSearchSecurityManager();
         SecurityUtils.setSecurityManager(securityManager);
     }
 

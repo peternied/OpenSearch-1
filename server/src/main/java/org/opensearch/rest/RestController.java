@@ -114,13 +114,15 @@ public class RestController implements HttpServerTransport.Dispatcher {
     /** Rest headers that are copied to internal requests made during a rest request. */
     private final Set<RestHeaderDefinition> headersToCopy;
     private final UsageService usageService;
+    private final IdentityModule identityModule;
 
     public RestController(
         Set<RestHeaderDefinition> headersToCopy,
         UnaryOperator<RestHandler> handlerWrapper,
         NodeClient client,
         CircuitBreakerService circuitBreakerService,
-        UsageService usageService
+        UsageService usageService,
+        IdentityModule identityModule
     ) {
         this.headersToCopy = headersToCopy;
         this.usageService = usageService;
@@ -130,6 +132,7 @@ public class RestController implements HttpServerTransport.Dispatcher {
         this.handlerWrapper = handlerWrapper;
         this.client = client;
         this.circuitBreakerService = circuitBreakerService;
+        this.identityModule = identityModule;
         registerHandlerNoWrap(
             RestRequest.Method.GET,
             "/favicon.ico",
@@ -524,7 +527,7 @@ public class RestController implements HttpServerTransport.Dispatcher {
             if (token == null) {
                 return true;
             }
-            final Subject currentSubject = IdentityModule.getModule().getSubject();
+            final Subject currentSubject = identityModule.getSubject();
             currentSubject.login(token);
             logger.info("Logged in as user " + currentSubject);
         } catch (final Exception e) {

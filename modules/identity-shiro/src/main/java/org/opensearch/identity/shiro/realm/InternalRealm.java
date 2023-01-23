@@ -16,6 +16,7 @@ import org.apache.shiro.authc.IncorrectCredentialsException;
 import org.apache.shiro.authc.SimpleAuthenticationInfo;
 import org.apache.shiro.authc.UnknownAccountException;
 import org.apache.shiro.authc.UsernamePasswordToken;
+import org.apache.shiro.authc.pam.UnsupportedTokenException;
 import org.apache.shiro.realm.AuthenticatingRealm;
 import org.apache.shiro.authc.UsernamePasswordToken;
 
@@ -77,14 +78,16 @@ public class InternalRealm extends AuthenticatingRealm {
             String username = ((UsernamePasswordToken) token).getUsername();
             // Look up the user by the provide username
             User userRecord = getInternalUser(username);
-            // Check for other things, like a locked account, expired password, etc.
+            // TODO: Check for other things, like a locked account, expired password, etc.
 
             // Verify the user
             SimpleAuthenticationInfo sai = new SimpleAuthenticationInfo(userRecord.getUsername(), userRecord.getBcryptHash(), realmName);
+
+            // TODO: Doesn't appear to check the password
             boolean successfulAuthentication = getCredentialsMatcher().doCredentialsMatch(token, sai);
 
             if (successfulAuthentication) {
-                // Check for anything else that might prevent login (expired password, locked account, etc.)
+                // TODO: Check for anything else that might prevent login (expired password, locked account, etc.)
                 // if (other problems) {
                 // throw new CredentialsException(); // Or something more specific
                 // }
@@ -95,7 +98,8 @@ public class InternalRealm extends AuthenticatingRealm {
                 throw new IncorrectCredentialsException();
             }
         }
-        // Don't know what to do with this token
-        throw new CredentialsException();
+
+        // If the token was not handled, it was unsupported
+        throw new UnsupportedTokenException("Unable to support authentication token " + token.getClass().getName());
     }
 }

@@ -22,23 +22,6 @@ import java.util.stream.Collectors;
 public class IdentityModule {
     private static final Logger logger = LogManager.getLogger(IdentityModule.class);
 
-    /** Application wide access for identity systems */
-    private static IdentityModule IDENTITY_MODULE = null;
-
-    /**
-     * Gets the Identity Service for this application
-     */
-    public static IdentityModule getModule() {
-        return IDENTITY_MODULE;
-    }
-
-    /**
-     * Gets the Identity Service for this application
-     */
-    public static void setModule(final IdentityModule module) {
-        IDENTITY_MODULE = module;
-    }
-
     private final Settings settings;
     private final IdentityPlugin identityPlugin;
 
@@ -54,10 +37,6 @@ public class IdentityModule {
                 "Multiple identity plugins are not supported, found: "
                     + identityPlugins.stream().map(Object::getClass).map(Class::getName).collect(Collectors.joining(","))
             );
-        }
-
-        if (IDENTITY_MODULE == null) {
-            IDENTITY_MODULE = this;
         }
 
         logger.info("Identity module loaded with " + identityPlugin.getClass().getName());

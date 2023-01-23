@@ -7,6 +7,9 @@
  */
 package org.opensearch.identity.tokens;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.opensearch.common.Strings;
 import org.opensearch.rest.RestRequest;
 
 import java.util.Collections;
@@ -16,6 +19,8 @@ import java.util.Optional;
  * Extracts tokens from RestRequests used for authentication
  */
 public class RestTokenExtractor {
+
+    private static final Logger logger = LogManager.getLogger(RestTokenExtractor.class);
 
     public final static String AUTH_HEADER_NAME = "Authorization";
 
@@ -38,11 +43,14 @@ public class RestTokenExtractor {
             if (authHeaderValueStr.startsWith(BasicAuthToken.TOKEN_IDENIFIER)) {
                 return new BasicAuthToken(authHeaderValueStr);
             } else {
-                throw new UnsupportedHttpAuthenticationToken(authHeaderValueStr);
+                if (logger.isDebugEnabled()) {
+                    String tokenTypeTruncated = Strings.substring(authHeaderValueStr, 0, 5);
+                    logger.debug("An authentication header was detected but the token type was not supported " + tokenTypeTruncated);
+                }
             }
         }
 
-        // No token found
+        logger.trace("No auth token could be extracted");
         return null;
     }
 } 
