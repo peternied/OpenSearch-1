@@ -6,14 +6,13 @@
  * compatible open source license.
  */
 
-package org.opensearch.identity.shiro;
+package org.opensearch.identity.shiro.realm;
 
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.IncorrectCredentialsException;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.junit.Before;
-import org.opensearch.identity.realm.InternalRealm;
 import org.opensearch.test.OpenSearchTestCase;
 
 import java.io.FileNotFoundException;

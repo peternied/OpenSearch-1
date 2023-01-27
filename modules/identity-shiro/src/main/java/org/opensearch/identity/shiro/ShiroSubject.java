@@ -57,6 +57,7 @@ public class ShiroSubject implements Subject {
      */
     public void login(AuthToken authenticationToken) {
         org.apache.shiro.authc.AuthenticationToken authToken = AuthTokenHandler.translateAuthToken(authenticationToken);
+
         shiroSubject.login(authToken);
     }
 }

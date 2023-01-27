@@ -19,7 +19,7 @@ import org.apache.shiro.mgt.SecurityManager;
 
 /**
  * Identity implementation with Shiro
- * 
+ *
  * @opensearch.experimental
  */
 public final class ShiroIdentityPlugin extends Plugin implements IdentityPlugin {

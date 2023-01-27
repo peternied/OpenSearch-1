@@ -10,6 +10,7 @@ package org.opensearch.identity.shiro;
 
 import com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope;
 import org.opensearch.common.settings.Settings;
+import org.opensearch.common.util.FeatureFlags;
 import org.opensearch.http.CorsHandler;
 import org.opensearch.http.HttpTransportSettings;
 import org.opensearch.plugins.Plugin;
@@ -27,7 +28,7 @@ public abstract class AbstractIdentityTestCase extends OpenSearchIntegTestCase {
 
     @Override
     protected Collection<Class<? extends Plugin>> nodePlugins() {
-        return List.of(DefaultIdentityPlugin.class, Netty4ModulePlugin.class);
+        return List.of(ShiroIdentityPlugin.class, Netty4ModulePlugin.class);
     }
 
     @Override
@@ -45,6 +46,7 @@ public abstract class AbstractIdentityTestCase extends OpenSearchIntegTestCase {
             .put(HttpTransportSettings.SETTING_CORS_ENABLED.getKey(), true)
             .put(HttpTransportSettings.SETTING_CORS_ALLOW_ORIGIN.getKey(), CorsHandler.ANY_ORIGIN)
             .put(HttpTransportSettings.SETTING_CORS_ALLOW_CREDENTIALS.getKey(), true)
+            .put(FeatureFlags.IDENTITY, true)
             .build();
     }
 }

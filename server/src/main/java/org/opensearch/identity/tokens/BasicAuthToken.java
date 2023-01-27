@@ -41,6 +41,6 @@ public final class BasicAuthToken implements AuthToken {
 
     // TODO: Password should not be actually stored this way, but lets handle this in a future PR
     public String getPassword() {
-        return user;
+        return password;
     }
 }

@@ -19,13 +19,13 @@ import java.util.stream.Collectors;
  *
  * @opensearch.experimental
  * */
-public class IdentityModule {
-    private static final Logger logger = LogManager.getLogger(IdentityModule.class);
+public class IdentityService {
+    private static final Logger logger = LogManager.getLogger(IdentityService.class);
 
     private final Settings settings;
     private final IdentityPlugin identityPlugin;
 
-    public IdentityModule(final Settings settings, final List<IdentityPlugin> identityPlugins) {
+    public IdentityService(final Settings settings, final List<IdentityPlugin> identityPlugins) {
         this.settings = settings;
 
         if (identityPlugins.size() == 0) {

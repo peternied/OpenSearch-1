@@ -6,7 +6,10 @@
  * compatible open source license.
  */
 
-/**
- * Identity implementation using Shiro
- */
 package org.opensearch.identity.shiro;
+
+import org.opensearch.test.OpenSearchTestCase;
+
+public class ShiroSubjectTests extends OpenSearchTestCase {
+
+}

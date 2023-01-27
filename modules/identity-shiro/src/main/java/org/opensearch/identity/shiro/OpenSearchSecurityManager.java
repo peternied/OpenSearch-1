@@ -6,16 +6,16 @@
  * compatible open source license.
  */
 
- package org.opensearch.identity.shiro;
+package org.opensearch.identity.shiro;
 
- import org.apache.shiro.subject.Subject;
- import org.apache.shiro.mgt.DefaultSecurityManager;
- import org.apache.shiro.mgt.SubjectDAO;
- import org.opensearch.identity.shiro.realm.InternalRealm;
+import org.apache.shiro.subject.Subject;
+import org.apache.shiro.mgt.DefaultSecurityManager;
+import org.apache.shiro.mgt.SubjectDAO;
+import org.opensearch.identity.shiro.realm.InternalRealm;
 
 /**
  * OpenSearch specific security manager implementation
- * 
+ *
  * @opensearch.experimental
  */
 public class OpenSearchSecurityManager extends DefaultSecurityManager {
@@ -32,7 +32,7 @@ public class OpenSearchSecurityManager extends DefaultSecurityManager {
     }
 
     /**
-     * 
+     *
      * @opensearch.experimental
      */
     private static class StatelessDAO implements SubjectDAO {
@@ -40,7 +40,6 @@ public class OpenSearchSecurityManager extends DefaultSecurityManager {
             return s;
         }
 
-        public void delete(final Subject s) {
-        }
+        public void delete(final Subject s) {}
     }
 }

@@ -173,7 +173,7 @@ public class ExtensionsManagerTests extends OpenSearchTestCase {
             new NodeClient(Settings.EMPTY, threadPool),
             new NoneCircuitBreakerService(),
             new UsageService(),
-            new IdentityModule(Settings.EMPTY, List.of());
+            new IdentityService(Settings.EMPTY, List.of());
         );
         settingsModule = new SettingsModule(Settings.EMPTY, emptyList(), emptyList(), emptySet());
         clusterService = createClusterService(threadPool);

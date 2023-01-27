@@ -29,12 +29,7 @@ dependencies {
 
   testImplementation project(path: ':modules:transport-netty4') // for http
   testImplementation project(path: ':plugins:transport-nio') // for http
-}
-
-tasks.named("dependencyLicenses").configure {
-  mapping from: /jackson-.*/, to: 'jackson'
-  mapping from: /cxf-.*/, to: 'cxf'
-  mapping from: /log4j-.*/, to: 'log4j'
+  testImplementation "org.mockito:mockito-core:${versions.mockito}"
 }
 
 /*

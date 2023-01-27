@@ -50,7 +50,7 @@ import org.opensearch.common.xcontent.XContentBuilder;
 import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.core.internal.io.Streams;
 import org.opensearch.http.HttpServerTransport;
-import org.opensearch.identity.IdentityModule;
+import org.opensearch.identity.IdentityService;
 import org.opensearch.identity.Subject;
 import org.opensearch.identity.tokens.AuthToken;
 import org.opensearch.identity.tokens.RestTokenExtractor;
@@ -114,7 +114,7 @@ public class RestController implements HttpServerTransport.Dispatcher {
     /** Rest headers that are copied to internal requests made during a rest request. */
     private final Set<RestHeaderDefinition> headersToCopy;
     private final UsageService usageService;
-    private final IdentityModule identityModule;
+    private final IdentityService identityService;
 
     public RestController(
         Set<RestHeaderDefinition> headersToCopy,
@@ -122,7 +122,7 @@ public class RestController implements HttpServerTransport.Dispatcher {
         NodeClient client,
         CircuitBreakerService circuitBreakerService,
         UsageService usageService,
-        IdentityModule identityModule
+        IdentityService identityService
     ) {
         this.headersToCopy = headersToCopy;
         this.usageService = usageService;
@@ -132,7 +132,7 @@ public class RestController implements HttpServerTransport.Dispatcher {
         this.handlerWrapper = handlerWrapper;
         this.client = client;
         this.circuitBreakerService = circuitBreakerService;
-        this.identityModule = identityModule;
+        this.identityService = identityService;
         registerHandlerNoWrap(
             RestRequest.Method.GET,
             "/favicon.ico",
@@ -527,7 +527,7 @@ public class RestController implements HttpServerTransport.Dispatcher {
             if (token == null) {
                 return true;
             }
-            final Subject currentSubject = identityModule.getSubject();
+            final Subject currentSubject = identityService.getSubject();
             currentSubject.login(token);
             logger.info("Logged in as user " + currentSubject);
         } catch (final Exception e) {

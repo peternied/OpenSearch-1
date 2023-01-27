@@ -8,61 +8,64 @@
 
 package org.opensearch.identity.shiro;
 
-import org.opensearch.action.admin.cluster.node.info.NodeInfo;
-import org.opensearch.action.admin.cluster.state.ClusterStateResponse;
 import org.opensearch.client.Request;
 import org.opensearch.client.RequestOptions;
 import org.opensearch.client.Response;
-import org.opensearch.client.RestClient;
+import org.opensearch.client.ResponseException;
 import org.opensearch.test.OpenSearchIntegTestCase;
 import org.opensearch.test.OpenSearchIntegTestCase.ClusterScope;
+import org.opensearch.rest.RestStatus;
 
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.stream.Collectors;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 
-import static org.opensearch.test.hamcrest.OpenSearchAssertions.assertNoTimeout;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.Assert.assertThat;
 
 @ClusterScope(scope = OpenSearchIntegTestCase.Scope.TEST, numDataNodes = 0)
 public class BasicAuthenticationIT extends HttpSmokeTestCaseWithIdentity {
 
-    public void testBasicAuth() throws Exception {
-        final String clusterManagerNode = internalCluster().startClusterManagerOnlyNode();
+    public void testBasicAuthSuccess() throws Exception {
+        final Response response = createHealthRequest("Basic YWRtaW46YWRtaW4="); // admin:admin
+        final String content = new String(response.getEntity().getContent().readAllBytes(), StandardCharsets.UTF_8);
 
-        ClusterStateResponse clusterStateResponse = client(clusterManagerNode).admin()
-            .cluster()
-            .prepareState()
-            .setClusterManagerNodeTimeout("1s")
-            .clear()
-            .setNodes(true)
-            .get();
-        assertNotNull(clusterStateResponse.getState().nodes().getClusterManagerNodeId());
+        assertEquals(RestStatus.OK.getStatus(), response.getStatusLine().getStatusCode());
+        assertThat(content, containsString("green"));
+    }
 
-        // start another node
-        final String dataNode = internalCluster().startDataOnlyNode();
-        clusterStateResponse = client(dataNode).admin()
-            .cluster()
-            .prepareState()
-            .setClusterManagerNodeTimeout("1s")
-            .clear()
-            .setNodes(true)
-            .setLocal(true)
-            .get();
-        assertNotNull(clusterStateResponse.getState().nodes().getClusterManagerNodeId());
-        // wait for the cluster to form
-        assertNoTimeout(client().admin().cluster().prepareHealth().setWaitForNodes(Integer.toString(2)).get());
-        List<NodeInfo> nodeInfos = client().admin().cluster().prepareNodesInfo().get().getNodes();
-        assertEquals(2, nodeInfos.size());
+    public void testBasicAuthUnauthorized_invalidHeader() throws Exception {
+        final Response response = createHealthRequest("Basic aaaa"); // invalid
+        final String content = new String(response.getEntity().getContent().readAllBytes(), StandardCharsets.UTF_8);
 
-        Request request = new Request("GET", "/_cluster/health");
-        RequestOptions options = RequestOptions.DEFAULT.toBuilder().addHeader("Authorization", "Basic YWRtaW46YWRtaW4=").build(); // admin:admin
+        assertThat(content, response.getStatusLine().getStatusCode(), equalTo(RestStatus.UNAUTHORIZED.getStatus()));
+        assertThat(content, containsString("Illegally formed basic authorization header"));
+    }
+
+    public void testBasicAuthUnauthorized_wrongPassword() throws Exception {
+        final Response response = createHealthRequest("Basic YWRtaW46aW52YWxpZFBhc3N3b3Jk"); // admin:invalidPassword
+        final String content = new String(response.getEntity().getContent().readAllBytes(), StandardCharsets.UTF_8);
+
+        assertThat(content, response.getStatusLine().getStatusCode(), equalTo(RestStatus.UNAUTHORIZED.getStatus()));
+    }
+
+    public void testBasicAuthUnauthorized_unknownUser() throws Exception {
+        final Response response = createHealthRequest("Basic dXNlcjpkb2VzTm90RXhpc3Q="); // user:doesNotExist
+        final String content = new String(response.getEntity().getContent().readAllBytes(), StandardCharsets.UTF_8);
+
+        assertThat(content, response.getStatusLine().getStatusCode(), equalTo(RestStatus.UNAUTHORIZED.getStatus()));
+    }
+
+    private Response createHealthRequest(final String authorizationHeaderValue) throws Exception {
+        final Request request = new Request("GET", "/_cluster/health");
+        final RequestOptions options = RequestOptions.DEFAULT.toBuilder().addHeader("Authorization", authorizationHeaderValue).build();
         request.setOptions(options);
-        List<NodeInfo> dataNodeInfos = nodeInfos.stream().filter(ni -> ni.getNode().isDataNode()).collect(Collectors.toList());
-        RestClient restClient = createRestClient(dataNodeInfos, null, "http");
 
-        Response response = restClient.performRequest(request);
-        String content = new String(response.getEntity().getContent().readAllBytes(), StandardCharsets.UTF_8);
-        assertEquals(200, response.getStatusLine().getStatusCode());
-        assertTrue(content.contains("\"status\":\"green\""));
+        try {
+            final Response response = getRestClient().performRequest(request);
+            return response;
+        } catch (final ResponseException re) {
+            return re.getResponse();
+        }
     }
 }

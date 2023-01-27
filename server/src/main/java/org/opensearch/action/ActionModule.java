@@ -287,7 +287,7 @@ import org.opensearch.common.settings.Settings;
 import org.opensearch.common.settings.SettingsFilter;
 import org.opensearch.common.util.FeatureFlags;
 import org.opensearch.index.seqno.RetentionLeaseActions;
-import org.opensearch.identity.IdentityModule;
+import org.opensearch.identity.IdentityService;
 import org.opensearch.indices.SystemIndices;
 import org.opensearch.indices.breaker.CircuitBreakerService;
 import org.opensearch.persistent.CompletionPersistentTaskAction;
@@ -490,7 +490,7 @@ public class ActionModule extends AbstractModule {
         CircuitBreakerService circuitBreakerService,
         UsageService usageService,
         SystemIndices systemIndices,
-        IdentityModule identityModule
+        IdentityService identityService
     ) {
         this.settings = settings;
         this.indexNameExpressionResolver = indexNameExpressionResolver;
@@ -525,7 +525,7 @@ public class ActionModule extends AbstractModule {
             actionPlugins.stream().flatMap(p -> p.indicesAliasesRequestValidators().stream()).collect(Collectors.toList())
         );
 
-        restController = new RestController(headers, restWrapper, nodeClient, circuitBreakerService, usageService, identityModule);
+        restController = new RestController(headers, restWrapper, nodeClient, circuitBreakerService, usageService, identityService);
     }
 
     public Map<String, ActionHandler<?, ?>> getActions() {

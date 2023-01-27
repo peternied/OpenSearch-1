@@ -132,7 +132,7 @@ import org.opensearch.gateway.GatewayService;
 import org.opensearch.gateway.MetaStateService;
 import org.opensearch.gateway.PersistedClusterStateService;
 import org.opensearch.http.HttpServerTransport;
-import org.opensearch.identity.IdentityModule;
+import org.opensearch.identity.IdentityService;
 import org.opensearch.index.IndexSettings;
 import org.opensearch.index.analysis.AnalysisRegistry;
 import org.opensearch.index.engine.EngineFactory;
@@ -441,7 +441,7 @@ public class Node implements Closeable {
             // Ensure to initialize Feature Flags via the settings from opensearch.yml
             FeatureFlags.initializeFeatureFlags(settings);
 
-            final IdentityModule identityModule = new IdentityModule(settings, pluginsService.filterPlugins(IdentityPlugin.class));
+            final IdentityService identityService = new IdentityService(settings, pluginsService.filterPlugins(IdentityPlugin.class));
 
             final Set<DiscoveryNodeRole> additionalRoles = pluginsService.filterPlugins(Plugin.class)
                 .stream()
@@ -787,7 +787,7 @@ public class Node implements Closeable {
                 circuitBreakerService,
                 usageService,
                 systemIndices,
-                identityModule
+                identityService
             );
             modules.add(actionModule);
 
@@ -1088,7 +1088,7 @@ public class Node implements Closeable {
                 b.bind(ShardLimitValidator.class).toInstance(shardLimitValidator);
                 b.bind(FsHealthService.class).toInstance(fsHealthService);
                 b.bind(SystemIndices.class).toInstance(systemIndices);
-                b.bind(IdentityModule.class).toInstance(identityModule);
+                b.bind(IdentityService.class).toInstance(identityService);
             });
             injector = modules.createInjector();
 
