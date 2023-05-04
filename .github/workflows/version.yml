@@ -44,8 +44,8 @@ jobs:
       - name: Increment Patch Version
         uses: peternied/opensearch-core-version-updater@main
         with:
-          previous-version: ${{ $CURRENT_VERSION }}
-          new-version: ${{ $NEXT_VERSION }}
+          previous-version: $CURRENT_VERSION
+          new-version: $NEXT_VERSION
           update-current: true
 
       - run: git diff
@@ -58,8 +58,8 @@ jobs:
       - name: Increment Patch Version
         uses: peternied/opensearch-core-version-updater@main
         with:
-          previous-version: ${{ $CURRENT_VERSION }}
-          new-version: ${{ $NEXT_VERSION }}
+          previous-version: $CURRENT_VERSION
+          new-version: $NEXT_VERSION
           update-current: false
 
       - run: git diff
@@ -72,8 +72,8 @@ jobs:
       - name: Increment Patch Version
         uses: peternied/opensearch-core-version-updater@main
         with:
-          previous-version: ${{ $CURRENT_VERSION }}
-          new-version: ${{ $NEXT_VERSION }}
+          previous-version: $CURRENT_VERSION
+          new-version: $NEXT_VERSION
           update-current: false
 
       - run: git diff
