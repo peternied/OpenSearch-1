@@ -8,6 +8,8 @@ on:
 permissions: {}
 jobs:
   build:
+    env:
+      VERSION_FILE: /libs/core/src/main/java/org/opensearch/Version.java
     runs-on: ubuntu-latest
     steps:
       - name: GitHub App token
@@ -53,20 +55,8 @@ jobs:
           sed -i "s/public static final Version $CURRENT_VERSION_UNDERSCORE = new Version(\([[:digit:]]\+\)\(.*\));/\0\n    public static final Version $NEXT_VERSION_UNDERSCORE = new Version($NEXT_VERSION_ID\2);/g" server/src/main/java/org/opensearch/Version.java
           sed -i "s/CURRENT = $CURRENT_VERSION_UNDERSCORE;/CURRENT = $NEXT_VERSION_UNDERSCORE;/g" server/src/main/java/org/opensearch/Version.java
 
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v3
-        with:
-          token: ${{ steps.github_app_token.outputs.token }}
-          base: ${{ env.BASE }}
-          branch: 'create-pull-request/patch-${{ env.BASE }}'
-          commit-message: Increment version to ${{ env.NEXT_VERSION }}
-          signoff: true
-          delete-branch: true
-          labels: |
-            autocut
-          title: '[AUTO] Increment version to ${{ env.NEXT_VERSION }}.'
-          body: |
-            I've noticed that a new tag ${{ env.TAG }} was pushed, and incremented the version from ${{ env.CURRENT_VERSION }} to ${{ env.NEXT_VERSION }}.
+      - run: git diff
+      - run: git checkout .
 
       - uses: actions/checkout@v2
         with:
@@ -80,20 +70,8 @@ jobs:
           echo Adding $NEXT_VERSION_UNDERSCORE after $CURRENT_VERSION_UNDERSCORE
           sed -i "s/public static final Version $CURRENT_VERSION_UNDERSCORE = new Version(\([[:digit:]]\+\)\(.*\));/\0\n    public static final Version $NEXT_VERSION_UNDERSCORE = new Version($NEXT_VERSION_ID\2);/g" server/src/main/java/org/opensearch/Version.java
 
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v3
-        with:
-          token: ${{ steps.github_app_token.outputs.token }}
-          base: ${{ env.BASE_X }}
-          branch: 'create-pull-request/patch-${{ env.BASE_X }}'
-          commit-message: Add bwc version ${{ env.NEXT_VERSION }}
-          signoff: true
-          delete-branch: true
-          labels: |
-            autocut
-          title: '[AUTO] [${{ env.BASE_X }}] Add bwc version ${{ env.NEXT_VERSION }}.'
-          body: |
-            I've noticed that a new tag ${{ env.TAG }} was pushed, and added a bwc version ${{ env.NEXT_VERSION }}.
+      - run: git diff
+      - run: git checkout .
 
       - uses: actions/checkout@v2
         with:
@@ -107,17 +85,5 @@ jobs:
           echo Adding $NEXT_VERSION_UNDERSCORE after $CURRENT_VERSION_UNDERSCORE
           sed -i "s/public static final Version $CURRENT_VERSION_UNDERSCORE = new Version(\([[:digit:]]\+\)\(.*\));/\0\n    public static final Version $NEXT_VERSION_UNDERSCORE = new Version($NEXT_VERSION_ID\2);/g" libs/core/src/main/java/org/opensearch/Version.java
 
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v3
-        with:
-          token: ${{ steps.github_app_token.outputs.token }}
-          base: main
-          branch: 'create-pull-request/patch-main'
-          commit-message: Add bwc version ${{ env.NEXT_VERSION }}
-          signoff: true
-          delete-branch: true
-          labels: |
-            autocut
-          title: '[AUTO] [main] Add bwc version ${{ env.NEXT_VERSION }}.'
-          body: |
-            I've noticed that a new tag ${{ env.TAG }} was pushed, and added a bwc version ${{ env.NEXT_VERSION }}.
+      - run: git diff
+      - run: git checkout
