@@ -42,13 +42,11 @@ jobs:
           ref: ${{ env.BASE }}
 
       - name: Increment Patch Version
-        run: |
-          echo Incrementing $CURRENT_VERSION to $NEXT_VERSION
-          echo "  - \"$CURRENT_VERSION\"" >> .ci/bwcVersions
-          sed -i "s/opensearch        = $CURRENT_VERSION/opensearch        = $NEXT_VERSION/g" buildSrc/version.properties
-          echo Adding $NEXT_VERSION_UNDERSCORE after $CURRENT_VERSION_UNDERSCORE
-          sed -i "s/public static final Version $CURRENT_VERSION_UNDERSCORE = new Version(\([[:digit:]]\+\)\(.*\));/\0\n    public static final Version $NEXT_VERSION_UNDERSCORE = new Version($NEXT_VERSION_ID\2);/g" server/src/main/java/org/opensearch/Version.java
-          sed -i "s/CURRENT = $CURRENT_VERSION_UNDERSCORE;/CURRENT = $NEXT_VERSION_UNDERSCORE;/g" server/src/main/java/org/opensearch/Version.java
+        uses: peternied/opensearch-core-version-updater@main
+        with:
+          previous-version: ${{ $CURRENT_VERSION }}
+          new-version: ${{ $NEXT_VERSION }}
+          update-current: true
 
       - run: git diff
       - run: git checkout .
@@ -57,12 +55,12 @@ jobs:
         with:
           ref: ${{ env.BASE_X }}
 
-      - name: Add bwc version to .X branch
-        run: |
-          echo Adding bwc version $NEXT_VERSION after $CURRENT_VERSION
-          sed -i "s/- \"$CURRENT_VERSION\"/\0\n  - \"$NEXT_VERSION\"/g" .ci/bwcVersions
-          echo Adding $NEXT_VERSION_UNDERSCORE after $CURRENT_VERSION_UNDERSCORE
-          sed -i "s/public static final Version $CURRENT_VERSION_UNDERSCORE = new Version(\([[:digit:]]\+\)\(.*\));/\0\n    public static final Version $NEXT_VERSION_UNDERSCORE = new Version($NEXT_VERSION_ID\2);/g" server/src/main/java/org/opensearch/Version.java
+      - name: Increment Patch Version
+        uses: peternied/opensearch-core-version-updater@main
+        with:
+          previous-version: ${{ $CURRENT_VERSION }}
+          new-version: ${{ $NEXT_VERSION }}
+          update-current: false
 
       - run: git diff
       - run: git checkout .
@@ -71,12 +69,12 @@ jobs:
         with:
           ref: main
 
-      - name: Add bwc version to main branch
-        run: |
-          echo Adding bwc version $NEXT_VERSION after $CURRENT_VERSION
-          sed -i "s/- \"$CURRENT_VERSION\"/\0\n  - \"$NEXT_VERSION\"/g" .ci/bwcVersions
-          echo Adding $NEXT_VERSION_UNDERSCORE after $CURRENT_VERSION_UNDERSCORE
-          sed -i "s/public static final Version $CURRENT_VERSION_UNDERSCORE = new Version(\([[:digit:]]\+\)\(.*\));/\0\n    public static final Version $NEXT_VERSION_UNDERSCORE = new Version($NEXT_VERSION_ID\2);/g" libs/core/src/main/java/org/opensearch/Version.java
+      - name: Increment Patch Version
+        uses: peternied/opensearch-core-version-updater@main
+        with:
+          previous-version: ${{ $CURRENT_VERSION }}
+          new-version: ${{ $NEXT_VERSION }}
+          update-current: false
 
       - run: git diff
-      - run: git checkout
+      - run: git checkout .
