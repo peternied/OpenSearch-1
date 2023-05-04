@@ -6,11 +6,12 @@ on:
     tags:
       - '*.*.*'
 
+env:
+  VERSION_FILE: /libs/core/src/main/java/org/opensearch/Version.java
+
 permissions: {}
 jobs:
   build:
-    env:
-      VERSION_FILE: /libs/core/src/main/java/org/opensearch/Version.java
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
