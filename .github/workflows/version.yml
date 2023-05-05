@@ -43,7 +43,9 @@ jobs:
           update-current: true
 
       - run: git diff
-      - run: git checkout .
+      - run: |
+          git add .
+          git commit -s -m "Increment Patch Version on Major.Minor branch"
 
       - uses: actions/checkout@v2
         with:
@@ -58,7 +60,9 @@ jobs:
           update-current: false
 
       - run: git diff
-      - run: git checkout .
+      - run: |
+          git add .
+          git commit -s -m "Increment Patch Version on Major.X branch"
 
       - uses: actions/checkout@v2
         with:
@@ -73,4 +77,6 @@ jobs:
           update-current: false
 
       - run: git diff
-      - run: git checkout .
+      - run: |
+          git add .
+          git commit -s -m "Increment Patch Version on Main branch"
