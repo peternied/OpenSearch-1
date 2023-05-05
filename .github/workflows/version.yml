@@ -37,13 +37,14 @@ jobs:
         uses: actions/github-script@v6.4.0
         with:
           script: |
-            const { data: result } = github.rest.issues.create({
+            const { data: issue } = github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: "Increment version for ${{ env.NEXT_VERSION }}",
               body: "Issue for tracking the changes associated with a version increment."
             });
-            return result.id;
+            console.log(JSON.stringify(issue));
+            return issue.id;
           result-encoding: string
             
       - uses: actions/checkout@v3
