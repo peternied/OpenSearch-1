@@ -43,7 +43,7 @@ jobs:
               title: "Increment version for ${{ env.NEXT_VERSION }}",
               body: "Issue for tracking the changes associated with a version increment."
             });
-            console.log(JSON.stringify(issue));
+            console.error(JSON.stringify(issue));
             return issue.id;
           result-encoding: string
             
