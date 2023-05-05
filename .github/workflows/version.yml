@@ -37,13 +37,13 @@ jobs:
         uses: actions/github-script@v6.4.0
         with:
           script: |
-            const { data: { number: issueNumber } } = github.rest.issues.create({
+            const { data: result } = github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: "Increment version for $NEXT_VERSION",
               body: "Issue for tracking the changes associated with a version increment."
-            })
-            return issueNumber
+            });
+            return result.number;
           result-encoding: string
             
       - uses: actions/checkout@v3
@@ -111,4 +111,4 @@ jobs:
               repo: context.repo.repo,
               issue_number: "${{steps.create-issue.outputs.result}}",
               state: "closed"
-            })
+            });
