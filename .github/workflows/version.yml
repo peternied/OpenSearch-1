@@ -11,7 +11,8 @@ on:
     tags:
       - '*.*.*'
 
-permissions: {}
+permissions:
+  contents: write
 jobs:
   version-update:
     runs-on: ubuntu-latest
