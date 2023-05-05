@@ -40,10 +40,10 @@ jobs:
             const { data: result } = github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: "Increment version for $NEXT_VERSION",
+              title: "Increment version for ${{ NEXT_VERSION }}",
               body: "Issue for tracking the changes associated with a version increment."
             });
-            return result.number;
+            return result.id;
           result-encoding: string
             
       - uses: actions/checkout@v3
