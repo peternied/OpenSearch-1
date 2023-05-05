@@ -24,6 +24,7 @@ jobs:
           BASE=$(IFS=. ; echo "${CURRENT_VERSION_ARRAY[*]:0:2}")
           BASE_X=$(IFS=. ; echo "${CURRENT_VERSION_ARRAY[*]:0:1}.x")
           CURRENT_VERSION=$(IFS=. ; echo "${CURRENT_VERSION_ARRAY[*]:0:3}")
+          CURRENT_VERSION_ARRAY[2]=$((CURRENT_VERSION_ARRAY[2]+1))
           NEXT_VERSION=$(IFS=. ; echo "${CURRENT_VERSION_ARRAY[*]:0:3}")
           echo "TAG=$TAG" >> $GITHUB_ENV
           echo "BASE=$BASE" >> $GITHUB_ENV
