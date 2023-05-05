@@ -30,13 +30,12 @@ jobs:
           echo "BASE_X=$BASE_X" >> $GITHUB_ENV
           echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
           echo "NEXT_VERSION=$NEXT_VERSION" >> $GITHUB_ENV
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: ${{ env.BASE }}
 
       - name: Increment Patch Version on Major.Minor branch
         uses: peternied/opensearch-core-version-updater@main
-        continue-on-error: true
         with:
           previous-version: ${{ env.CURRENT_VERSION }}
           new-version: ${{ env.NEXT_VERSION }}
@@ -44,16 +43,18 @@ jobs:
 
       - run: git diff
       - run: |
+          git config --global user.name 'Peter Nied'
+          git config --global user.email 'petern@amazon.com'
           git add .
-          git commit -s -m "Increment Patch Version on Major.Minor branch"
+          git commit -s -m "Increment version to $NEXT_VERSION"
+          git push
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: ${{ env.BASE_X }}
 
-      - name: Increment Patch Version on Major.X branch
+      - name: Add Patch Version on Major.X branch
         uses: peternied/opensearch-core-version-updater@main
-        continue-on-error: true
         with:
           previous-version: ${{ env.CURRENT_VERSION }}
           new-version: ${{ env.NEXT_VERSION }}
@@ -61,16 +62,18 @@ jobs:
 
       - run: git diff
       - run: |
+          git config --global user.name 'Peter Nied'
+          git config --global user.email 'petern@amazon.com'
           git add .
-          git commit -s -m "Increment Patch Version on Major.X branch"
+          git commit -s -m "Add patch version $NEXT_VERSION"
+          git push
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: main
 
-      - name: Increment Patch Version on Main branch
+      - name: Add Patch Version on Main branch
         uses: peternied/opensearch-core-version-updater@main
-        continue-on-error: true
         with:
           previous-version: ${{ env.CURRENT_VERSION }}
           new-version: ${{ env.NEXT_VERSION }}
@@ -78,5 +81,8 @@ jobs:
 
       - run: git diff
       - run: |
+          git config --global user.name 'Peter Nied'
+          git config --global user.email 'petern@amazon.com'
           git add .
-          git commit -s -m "Increment Patch Version on Main branch"
+          git commit -s -m "Add patch version $NEXT_VERSION"
+          git push
