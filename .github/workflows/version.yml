@@ -37,7 +37,7 @@ jobs:
         uses: actions/github-script@v6.4.0
         with:
           script: |
-            const { data: { issue: issueNumber } } = github.rest.issues.create({
+            const { data: { number: issueNumber } } = github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: "Increment version for $NEXT_VERSION",
