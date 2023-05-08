@@ -471,6 +471,10 @@ public class ExtensionsManager {
     }
 
     private void onIndexModule(IndexModule indexModule, DiscoveryNode extensionNode) throws UnknownHostException {
+
+        // Authenticate subject as extension
+        // check if allowed
+
         logger.info("onIndexModule index:" + indexModule.getIndex());
         final CompletableFuture<IndicesModuleResponse> inProgressFuture = new CompletableFuture<>();
         final CompletableFuture<AcknowledgedResponse> inProgressIndexNameFuture = new CompletableFuture<>();
