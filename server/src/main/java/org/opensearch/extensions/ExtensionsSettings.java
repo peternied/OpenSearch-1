@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.opensearch.identity.scopes.Scope;
+
 /**
  * List of extension configurations from extension.yml
  *
@@ -44,6 +46,7 @@ public class ExtensionsSettings {
         private String opensearchVersion;
         private String minimumCompatibleVersion;
         private List<ExtensionDependency> dependencies = Collections.emptyList();
+        private List<String> scopes = Collections.emptyList();
 
         public Extension(
             String name,
@@ -53,7 +56,8 @@ public class ExtensionsSettings {
             String version,
             String opensearchVersion,
             String minimumCompatibleVersion,
-            List<ExtensionDependency> dependencies
+            List<ExtensionDependency> dependencies,
+            List<String> scopes 
         ) {
             this.name = name;
             this.uniqueId = uniqueId;
@@ -63,6 +67,7 @@ public class ExtensionsSettings {
             this.opensearchVersion = opensearchVersion;
             this.minimumCompatibleVersion = minimumCompatibleVersion;
             this.dependencies = dependencies;
+            this.scopes = scopes;
         }
 
         public Extension() {
@@ -127,6 +132,10 @@ public class ExtensionsSettings {
             return dependencies;
         }
 
+        public List<String> getScopes() {
+            return scopes;
+        }
+
         public String getMinimumCompatibleVersion() {
             return minimumCompatibleVersion;
         }
@@ -151,6 +160,10 @@ public class ExtensionsSettings {
                 + opensearchVersion
                 + ", minimumCompatibleVersion="
                 + minimumCompatibleVersion
+                + ", dependencies="
+                + dependencies
+                + ", scopes="
+                + scopes
                 + "]";
         }
 
