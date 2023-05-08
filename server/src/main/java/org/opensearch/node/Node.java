@@ -465,8 +465,6 @@ public class Node implements Closeable {
                 identityPlugins.addAll(pluginsService.filterPlugins(IdentityPlugin.class));
             }
 
-            final IdentityService identityService = new IdentityService(settings, identityPlugins);
-
             if (FeatureFlags.isEnabled(FeatureFlags.EXTENSIONS)) {
                 final List<ExtensionAwarePlugin> extensionAwarePlugins = pluginsService.filterPlugins(ExtensionAwarePlugin.class);
                 Set<Setting<?>> additionalSettings = new HashSet<>();
@@ -477,6 +475,7 @@ public class Node implements Closeable {
             } else {
                 this.extensionsManager = new NoopExtensionsManager();
             }
+            final IdentityService identityService = new IdentityService(settings, identityPlugins, extensionsManager);
 
             final Set<DiscoveryNodeRole> additionalRoles = pluginsService.filterPlugins(Plugin.class)
                 .stream()

@@ -59,6 +59,13 @@ import org.opensearch.extensions.rest.RegisterRestActionsRequest;
 import org.opensearch.extensions.rest.RestActionsRequestHandler;
 import org.opensearch.extensions.settings.CustomSettingsRequestHandler;
 import org.opensearch.extensions.settings.RegisterCustomSettingsRequest;
+import org.opensearch.identity.scopes.Scope;
+import org.opensearch.index.IndexModule;
+import org.opensearch.index.IndexService;
+import org.opensearch.index.IndicesModuleRequest;
+import org.opensearch.index.IndicesModuleResponse;
+import org.opensearch.index.shard.IndexEventListener;
+import org.opensearch.indices.cluster.IndicesClusterStateService;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.transport.ConnectTransportException;
 import org.opensearch.transport.TransportException;
@@ -126,7 +133,6 @@ public class ExtensionsManager {
         this.extensionsPath = extensionsPath;
         this.initializedExtensions = new HashMap<String, DiscoveryExtensionNode>();
         this.extensionIdMap = new HashMap<String, DiscoveryExtensionNode>();
-        this.extensionSettingsMap = new HashMap<String, Extension>();
         // will be initialized in initializeServicesAndRestHandler which is called after the Node is initialized
         this.transportService = null;
         this.clusterService = null;
@@ -353,7 +359,6 @@ public class ExtensionsManager {
                 );
 
                 extensionIdMap.put(extension.getUniqueId(), discoveryExtensionNode);
-                extensionSettingsMap.put(extension.getUniqueId(), extension);
                 logger.info("Loaded extension with uniqueId " + extension.getUniqueId() + ": " + extension);
             } catch (OpenSearchException e) {
                 logger.error("Could not load extension with uniqueId " + extension.getUniqueId() + " due to " + e);
@@ -370,6 +375,20 @@ public class ExtensionsManager {
         for (DiscoveryExtensionNode extension : extensionIdMap.values()) {
             initializeExtension(extension);
         }
+    }
+
+    /**
+     * Check if the matching extension id is allowed to perform the action
+     */
+    public boolean isExtensionAllowed(final String id, final String action) {
+        final Optional<Extension> extensionScopes = Optional.of(this.extensionSettingsMap)
+            .map(extensionMap -> extensionMap.get(id));
+
+        if (!extensionScopes.isPresent()) {
+            return false; // No extension was found, so it is not permitted
+        }
+
+        return extensionScopes.get().getScopes().stream().filter(action::equals).findFirst().isPresent();
     }
 
     private void initializeExtension(DiscoveryExtensionNode extension) {
@@ -463,12 +482,6 @@ public class ExtensionsManager {
                 }
             default:
                 throw new IllegalArgumentException("Handler not present for the provided request");
-        }
-    }
-
-    public void onIndexModule(IndexModule indexModule) throws UnknownHostException {
-        for (DiscoveryNode extensionNode : extensionIdMap.values()) {
-            onIndexModule(indexModule, extensionNode);
         }
     }
 
@@ -610,7 +623,8 @@ public class ExtensionsManager {
                         "port",
                         "version",
                         "opensearchVersion",
-                        "minimumCompatibleVersion" };
+                        "minimumCompatibleVersion",
+                        "scopes" };
                     List<String> missingFields = Arrays.stream(requiredFields)
                         .filter(field -> !extensionMap.containsKey(field))
                         .collect(Collectors.toList());
@@ -643,6 +657,10 @@ public class ExtensionsManager {
                     Settings.Builder output = Settings.builder();
                     output.loadFromMap(additionalSettingsMap);
                     extAdditionalSettings.applySettings(output.build());
+                    List<String> scopes = new ArrayList<>();
+                    if (extensionMap.get("scopes") != null) {
+                        scopes = new ArrayList<String>((Collection<String>)extensionMap.get("scopes"));
+                    }
 
                     // Create extension read from yml config
                     readExtensions.add(
@@ -655,7 +673,8 @@ public class ExtensionsManager {
                             extensionMap.get("opensearchVersion").toString(),
                             extensionMap.get("minimumCompatibleVersion").toString(),
                             extensionDependencyList,
-                            extAdditionalSettings
+                            extAdditionalSettings,
+                            scopes
                         )
                     );
                 } catch (IOException e) {
