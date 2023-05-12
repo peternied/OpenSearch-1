@@ -476,7 +476,7 @@ public class Node implements Closeable {
             } else {
                 this.extensionsManager = new NoopExtensionsManager();
             }
-            final IdentityService identityService = new IdentityService(settings, identityPlugins, extensionsManager);
+            final IdentityService identityService = new IdentityService(settings, identityPlugins);
 
             final Set<DiscoveryNodeRole> additionalRoles = pluginsService.filterPlugins(Plugin.class)
                 .stream()
