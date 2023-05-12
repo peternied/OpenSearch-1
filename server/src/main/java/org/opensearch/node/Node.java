@@ -189,6 +189,7 @@ import org.opensearch.plugins.PersistentTaskPlugin;
 import org.opensearch.plugins.Plugin;
 import org.opensearch.plugins.PluginsService;
 import org.opensearch.plugins.RepositoryPlugin;
+import org.opensearch.plugins.ScopeProtectedActionPlugin;
 import org.opensearch.plugins.ScriptPlugin;
 import org.opensearch.plugins.SearchPlugin;
 import org.opensearch.plugins.SystemIndexPlugin;
@@ -791,7 +792,7 @@ public class Node implements Closeable {
             final List<ActionPlugin> scopeProtectedActionPlugin = pluginsService
                 .filterPlugins(ActionPlugin.class)
                 .stream()
-                .map(plugin -> ScopeProtectedActionPlugin(plugin, identityService))
+                .map(plugin -> new ScopeProtectedActionPlugin(plugin, identityService))
                 .collect(Collectors.toList());
 
             ActionModule actionModule = new ActionModule(
