@@ -457,19 +457,20 @@ public class Node implements Closeable {
             // Ensure to initialize Feature Flags via the settings from opensearch.yml
             FeatureFlags.initializeFeatureFlags(settings);
 
-            if (FeatureFlags.isEnabled(FeatureFlags.EXTENSIONS)) {
-                this.extensionsManager = new ExtensionsManager(initialEnvironment.extensionDir());
-            } else {
-                this.extensionsManager = new NoopExtensionsManager();
-            }
-
             final List<IdentityPlugin> identityPlugins = new ArrayList<>();
             if (FeatureFlags.isEnabled(FeatureFlags.IDENTITY)) {
                 // If identity is enabled load plugins implementing the extension point
                 logger.info("Identity on so found plugins implementing: " + pluginsService.filterPlugins(IdentityPlugin.class).toString());
                 identityPlugins.addAll(pluginsService.filterPlugins(IdentityPlugin.class));
             }
-            final IdentityService identityService = new IdentityService(settings, identityPlugins, extensionsManager);
+
+            final IdentityService identityService = new IdentityService(settings, identityPlugins);
+
+            if (FeatureFlags.isEnabled(FeatureFlags.EXTENSIONS)) {
+                this.extensionsManager = new ExtensionsManager(initialEnvironment.extensionDir());
+            } else {
+                this.extensionsManager = new NoopExtensionsManager();
+            }
 
             final Set<DiscoveryNodeRole> additionalRoles = pluginsService.filterPlugins(Plugin.class)
                 .stream()
