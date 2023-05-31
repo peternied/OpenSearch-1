@@ -26,7 +26,10 @@ public class IdentityService {
     private final IdentityPlugin identityPlugin;
 
     private static IdentityService instance;
-    public static IdentityService getInstance() { return instance; } 
+
+    public static IdentityService getInstance() {
+        return instance;
+    }
 
     public IdentityService(final Settings settings, final List<IdentityPlugin> identityPlugins) {
         this.settings = settings;
