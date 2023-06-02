@@ -818,4 +818,5 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
             return toExecute;
         }
     }
+
 }
