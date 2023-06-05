@@ -8,19 +8,6 @@
 
 package org.opensearch.extensions;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.emptySet;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.mock;
-import static org.opensearch.test.ClusterServiceUtils.createClusterService;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
@@ -35,7 +22,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.junit.After;
@@ -46,8 +32,6 @@ import org.opensearch.action.ActionModule.DynamicActionRegistry;
 import org.opensearch.action.admin.cluster.state.ClusterStateResponse;
 import org.opensearch.client.node.NodeClient;
 import org.opensearch.cluster.ClusterSettingsResponse;
-import org.opensearch.common.util.FeatureFlags;
-import org.opensearch.env.EnvironmentSettingsResponse;
 import org.opensearch.cluster.metadata.IndexMetadata;
 import org.opensearch.cluster.node.DiscoveryNode;
 import org.opensearch.cluster.service.ClusterService;
@@ -58,14 +42,16 @@ import org.opensearch.common.io.stream.BytesStreamOutput;
 import org.opensearch.common.io.stream.NamedWriteableRegistry;
 import org.opensearch.common.network.NetworkService;
 import org.opensearch.common.settings.Setting;
-import org.opensearch.common.settings.Settings;
-import org.opensearch.common.settings.WriteableSetting;
 import org.opensearch.common.settings.Setting.Property;
-import org.opensearch.common.settings.WriteableSetting.SettingType;
+import org.opensearch.common.settings.Settings;
 import org.opensearch.common.settings.SettingsModule;
+import org.opensearch.common.settings.WriteableSetting;
+import org.opensearch.common.settings.WriteableSetting.SettingType;
 import org.opensearch.common.transport.TransportAddress;
+import org.opensearch.common.util.FeatureFlags;
 import org.opensearch.common.util.PageCacheRecycler;
 import org.opensearch.env.Environment;
+import org.opensearch.env.EnvironmentSettingsResponse;
 import org.opensearch.extensions.proto.ExtensionRequestProto;
 import org.opensearch.extensions.rest.RegisterRestActionsRequest;
 import org.opensearch.extensions.settings.RegisterCustomSettingsRequest;
@@ -85,6 +71,18 @@ import org.opensearch.transport.TransportResponse;
 import org.opensearch.transport.TransportService;
 import org.opensearch.transport.nio.MockNioTransport;
 import org.opensearch.usage.UsageService;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.opensearch.test.ClusterServiceUtils.createClusterService;
 
 public class ExtensionsManagerTests extends OpenSearchTestCase {
     private TransportService transportService;
@@ -112,6 +110,7 @@ public class ExtensionsManagerTests extends OpenSearchTestCase {
         "     version: '0.0.7'",
         "     opensearchVersion: '3.0.0'",
         "     minimumCompatibleVersion: '3.0.0'",
+        "     scopes: ['Index_ALL']",
         "     custom_extension_setting: 'custom_setting'",
         "   - name: secondExtension",
         "     uniqueId: 'uniqueid2'",
@@ -120,6 +119,7 @@ public class ExtensionsManagerTests extends OpenSearchTestCase {
         "     version: '3.14.16'",
         "     opensearchVersion: '2.0.0'",
         "     minimumCompatibleVersion: '2.0.0'",
+        "     scopes: ['Index_ALL']",
         "     dependencies:",
         "       - uniqueId: 'uniqueid0'",
         "         version: '2.0.0'"
@@ -189,7 +189,8 @@ public class ExtensionsManagerTests extends OpenSearchTestCase {
             new HashMap<String, String>(),
             Version.fromString("3.0.0"),
             Version.fromString("3.0.0"),
-            Collections.emptyList()
+            Collections.emptyList(),
+            List.of()
         );
         client = new NoOpNodeClient(this.getTestName());
     }
@@ -222,7 +223,8 @@ public class ExtensionsManagerTests extends OpenSearchTestCase {
                 new HashMap<String, String>(),
                 Version.fromString("3.0.0"),
                 Version.fromString("3.0.0"),
-                Collections.emptyList()
+                Collections.emptyList(),
+                List.of()
             )
         );
 
@@ -234,7 +236,8 @@ public class ExtensionsManagerTests extends OpenSearchTestCase {
                 new HashMap<String, String>(),
                 Version.fromString("2.0.0"),
                 Version.fromString("2.0.0"),
-                List.of(expectedDependency)
+                List.of(expectedDependency),
+                List.of()
             )
         );
         assertEquals(expectedExtensions.size(), extensionsManager.getExtensionIdMap().values().size());
@@ -271,7 +274,8 @@ public class ExtensionsManagerTests extends OpenSearchTestCase {
                 new HashMap<String, String>(),
                 Version.fromString("3.0.0"),
                 Version.fromString("3.0.0"),
-                Collections.emptyList()
+                Collections.emptyList(),
+                List.of()
             )
         );
         assertEquals(expectedExtensions.size(), extensionsManager.getExtensionIdMap().values().size());
@@ -323,7 +327,8 @@ public class ExtensionsManagerTests extends OpenSearchTestCase {
                 new HashMap<String, String>(),
                 Version.fromString("3.0.0"),
                 Version.fromString("3.0.0"),
-                Collections.emptyList()
+                Collections.emptyList(),
+                List.of()
             )
         );
         assertEquals(expectedExtensions.size(), extensionsManager.getExtensionIdMap().values().size());
@@ -353,7 +358,8 @@ public class ExtensionsManagerTests extends OpenSearchTestCase {
             new HashMap<String, String>(),
             Version.fromString("3.0.0"),
             Version.fromString("3.0.0"),
-            List.of(expectedDependency)
+            List.of(expectedDependency),
+            List.of()
         );
 
         assertEquals(List.of(expectedDependency), discoveryExtensionNode.getDependencies());
@@ -488,6 +494,7 @@ public class ExtensionsManagerTests extends OpenSearchTestCase {
     }
 
     public void testHandleRegisterSettingsRequest() throws Exception {
+        System.out.println("ExtensionsYmlLines are: " + extensionsYmlLines);
         Files.write(extensionDir.resolve("extensions.yml"), extensionsYmlLines, StandardCharsets.UTF_8);
         ExtensionsManager extensionsManager = new ExtensionsManager(extensionDir, Set.of());
         initialize(extensionsManager);
@@ -636,7 +643,8 @@ public class ExtensionsManagerTests extends OpenSearchTestCase {
                 new HashMap<String, String>(),
                 Version.fromString("3.0.0"),
                 Version.fromString("3.0.0"),
-                List.of(expectedDependency)
+                List.of(expectedDependency),
+                List.of()
             )
         );
 
@@ -863,7 +871,8 @@ public class ExtensionsManagerTests extends OpenSearchTestCase {
                 "     port: '9300'",
                 "     version: '0.0.7'",
                 "     opensearchVersion: '3.0.0'",
-                "     minimumCompatibleVersion: '3.99.0'"
+                "     minimumCompatibleVersion: '3.99.0'",
+                "     scopes: ['Index_ALL']"
             );
 
             Files.write(extensionDir.resolve("extensions.yml"), incompatibleExtension, StandardCharsets.UTF_8);
@@ -887,7 +896,8 @@ public class ExtensionsManagerTests extends OpenSearchTestCase {
             new HashMap<String, String>(),
             Version.fromString("3.0.0"),
             Version.fromString("3.0.0"),
-            List.of()
+            List.of(),
+            List.of("test")
         );
         DiscoveryExtensionNode initializedExtension = extensionsManager.getExtensionIdMap().get(extension.getId());
         assertEquals(extension.getName(), initializedExtension.getName());
@@ -913,11 +923,14 @@ public class ExtensionsManagerTests extends OpenSearchTestCase {
             new HashMap<String, String>(),
             Version.fromString("2.0.0"),
             Version.fromString("2.0.0"),
+            List.of(),
             List.of()
         );
         DiscoveryExtensionNode initializedExtension = extensionsManager.getExtensionIdMap().get(extension.getId());
+        System.out.println("Extensions initialized: " + initializedExtension.getName() + " with ID: " + initializedExtension.getId());
         assertEquals(extension.getName(), initializedExtension.getName());
         assertEquals(extension.getId(), initializedExtension.getId());
+        System.out.println("Extension idMap is : " + extensionsManager.getExtensionIdMap());
         assertTrue(extensionsManager.lookupExtensionSettingsById(extension.getId()).isPresent());
         assertEquals(
             "none",

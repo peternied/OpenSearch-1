@@ -5,14 +5,14 @@
 
 package org.opensearch.identity;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opensearch.OpenSearchException;
-import org.opensearch.identity.noop.NoopIdentityPlugin;
-import java.util.List;
 import org.opensearch.common.settings.Settings;
+import org.opensearch.identity.noop.NoopIdentityPlugin;
 import org.opensearch.plugins.IdentityPlugin;
-import java.util.stream.Collectors;
 
 /**
  * Identity and access control for OpenSearch.
@@ -25,9 +25,12 @@ public class IdentityService {
     private final Settings settings;
     private final IdentityPlugin identityPlugin;
 
-    private static IdentityService instance;
+    private static IdentityService instance = null;
 
     public static IdentityService getInstance() {
+        if (instance == null) {
+            new IdentityService(Settings.EMPTY, List.of());
+        }
         return instance;
     }
 

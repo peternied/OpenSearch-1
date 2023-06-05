@@ -136,6 +136,7 @@ public class ExtensionsManager {
         this.extensionsPath = extensionsPath;
         this.initializedExtensions = new HashMap<String, DiscoveryExtensionNode>();
         this.extensionIdMap = new HashMap<String, DiscoveryExtensionNode>();
+        this.extensionSettingsMap = new HashMap<String, Extension>();
         // will be initialized in initializeServicesAndRestHandler which is called after the Node is initialized
         this.transportService = null;
         this.clusterService = null;
@@ -358,10 +359,12 @@ public class ExtensionsManager {
                     new HashMap<String, String>(),
                     Version.fromString(extension.getOpensearchVersion()),
                     Version.fromString(extension.getMinimumCompatibleVersion()),
-                    extension.getDependencies()
+                    extension.getDependencies(),
+                    extension.getScopes()
                 );
 
                 extensionIdMap.put(extension.getUniqueId(), discoveryExtensionNode);
+                extensionSettingsMap.put(extension.getUniqueId(), extension);
                 logger.info("Loaded extension with uniqueId " + extension.getUniqueId() + ": " + extension);
             } catch (OpenSearchException e) {
                 logger.error("Could not load extension with uniqueId " + extension.getUniqueId() + " due to " + e);
@@ -658,7 +661,7 @@ public class ExtensionsManager {
                     extAdditionalSettings.applySettings(output.build());
                     List<String> scopes = new ArrayList<>();
                     if (extensionMap.get("scopes") != null) {
-                        scopes = new ArrayList<String>((Collection<String>) extensionMap.get("scopes"));
+                        scopes = (List<String>) extensionMap.get("scopes");
                     }
 
                     // Create extension read from yml config
