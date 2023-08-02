@@ -1,10 +1,18 @@
 name: "Detect Breaking Changes"
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  schedule:
+   - cron:  '0 * * * *'
+
 jobs:
   detect-breaking-change:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - run: git remote add upstream https://github.com/opensearch-project/OpenSearch.git
+    - run: git fetch upstream
+    - run: git merge upstream/main -m "Merged from upstream"
     - uses: actions/setup-java@v2
       with:
         distribution: temurin # Temurin is a distribution of adoptium
