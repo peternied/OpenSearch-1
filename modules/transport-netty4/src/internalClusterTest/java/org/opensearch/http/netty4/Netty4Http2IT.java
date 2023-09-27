@@ -28,6 +28,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 
+// ./gradlew -p modules/transport-netty4 internalClusterTest --tests org.opensearch.http.netty4.Netty4Http2IT
 @ClusterScope(scope = Scope.TEST, supportsDedicatedMasters = false, numDataNodes = 1)
 public class Netty4Http2IT extends OpenSearchNetty4IntegTestCase {
 

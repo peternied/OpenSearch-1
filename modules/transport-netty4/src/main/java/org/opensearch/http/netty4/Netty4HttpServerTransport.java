@@ -100,6 +100,8 @@ import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.util.AsciiString;
 import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_MAX_CHUNK_SIZE;
 import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_MAX_CONTENT_LENGTH;
@@ -434,7 +436,16 @@ public class Netty4HttpServerTransport extends AbstractHttpServerTransport {
                     pipeline.addBefore("handler", "pipelining", new Netty4HttpPipeliningHandler(logger, transport.pipeliningMaxEvents));
 
                     ctx.fireChannelRead(ReferenceCountUtil.retain(msg));
-                }
+
+                    final AtomicReference<String> output = new AtomicReference<String>();
+                    output.set(this.getClass().getName() + " channelRead0 pipeline\n");
+                    final AtomicInteger pEntryCount = new AtomicInteger(0);
+                    pipeline.forEach(entry -> {
+                        output.set(output.get() + "\n" +
+                            pEntryCount.incrementAndGet() + ". pipeline '" + entry.getKey() + "', channel handler '" + entry.getValue().getClass().getName() + "'");
+                    });
+                    throw new RuntimeException("STOP! " + output.get());
+                }   
             });
         }
 
@@ -458,6 +469,15 @@ public class Netty4HttpServerTransport extends AbstractHttpServerTransport {
             pipeline.addLast("response_creator", responseCreator);
             pipeline.addLast("pipelining", new Netty4HttpPipeliningHandler(logger, transport.pipeliningMaxEvents));
             pipeline.addLast("handler", requestHandler);
+
+            final AtomicReference<String> output = new AtomicReference<String>();
+            output.set(this.getClass().getName() + " configureDefaultHttpPipeline pipeline\n");
+            final AtomicInteger pEntryCount = new AtomicInteger(0);
+            pipeline.forEach(entry -> {
+                output.set(output.get() + "\n" +
+                    pEntryCount.incrementAndGet() + ". pipeline '" + entry.getKey() + "', channel handler '" + entry.getValue().getClass().getName() + "'");
+            });
+            throw new RuntimeException("STOP! " + output.get());
         }
 
         protected void configureDefaultHttp2Pipeline(ChannelPipeline pipeline) {
@@ -493,6 +513,7 @@ public class Netty4HttpServerTransport extends AbstractHttpServerTransport {
                         .addLast(new Http2StreamFrameToHttpObjectCodec(true))
                         .addLast("byte_buf_sizer", byteBufSizer)
                         .addLast("read_timeout", new ReadTimeoutHandler(transport.readTimeoutMillis, TimeUnit.MILLISECONDS))
+                        .addLast("authz", new )
                         .addLast("decoder_decompress", new HttpContentDecompressor());
 
                     if (handlingSettings.isCompression()) {
@@ -506,6 +527,15 @@ public class Netty4HttpServerTransport extends AbstractHttpServerTransport {
                         .addLast("response_creator", responseCreator)
                         .addLast("pipelining", new Netty4HttpPipeliningHandler(logger, transport.pipeliningMaxEvents))
                         .addLast("handler", getRequestHandler());
+
+                    final AtomicReference<String> output = new AtomicReference<String>();
+                    output.set(this.getClass().getName() + " createHttp2ChannelInitializer pipeline\n");
+                    final AtomicInteger pEntryCount = new AtomicInteger(0);
+                    childChannel.pipeline().forEach(entry -> {
+                        output.set(output.get() + "\n" +
+                            pEntryCount.incrementAndGet() + ". pipeline '" + entry.getKey() + "', channel handler '" + entry.getValue().getClass().getName() + "'");
+                    });
+                    throw new RuntimeException("STOP! " + output.get());
                 }
             };
         }
