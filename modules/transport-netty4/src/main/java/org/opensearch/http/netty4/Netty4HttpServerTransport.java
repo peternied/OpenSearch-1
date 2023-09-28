@@ -32,6 +32,25 @@
 
 package org.opensearch.http.netty4;
 
+import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_MAX_CHUNK_SIZE;
+import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_MAX_CONTENT_LENGTH;
+import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_MAX_HEADER_SIZE;
+import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_MAX_INITIAL_LINE_LENGTH;
+import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_READ_TIMEOUT;
+import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_TCP_KEEP_ALIVE;
+import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_TCP_KEEP_COUNT;
+import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_TCP_KEEP_IDLE;
+import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_TCP_KEEP_INTERVAL;
+import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_TCP_NO_DELAY;
+import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_TCP_RECEIVE_BUFFER_SIZE;
+import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_TCP_REUSE_ADDRESS;
+import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_TCP_SEND_BUFFER_SIZE;
+import static org.opensearch.http.HttpTransportSettings.SETTING_PIPELINING_MAX_EVENTS;
+
+import java.net.InetSocketAddress;
+import java.net.SocketOption;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opensearch.ExceptionsHelper;
@@ -60,10 +79,6 @@ import org.opensearch.transport.NettyAllocator;
 import org.opensearch.transport.NettyByteBufSizer;
 import org.opensearch.transport.SharedGroupFactory;
 import org.opensearch.transport.netty4.Netty4Utils;
-
-import java.net.InetSocketAddress;
-import java.net.SocketOption;
-import java.util.concurrent.TimeUnit;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -102,21 +117,6 @@ import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.util.AsciiString;
 import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
-
-import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_MAX_CHUNK_SIZE;
-import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_MAX_CONTENT_LENGTH;
-import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_MAX_HEADER_SIZE;
-import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_MAX_INITIAL_LINE_LENGTH;
-import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_READ_TIMEOUT;
-import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_TCP_KEEP_ALIVE;
-import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_TCP_KEEP_COUNT;
-import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_TCP_KEEP_IDLE;
-import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_TCP_KEEP_INTERVAL;
-import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_TCP_NO_DELAY;
-import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_TCP_RECEIVE_BUFFER_SIZE;
-import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_TCP_REUSE_ADDRESS;
-import static org.opensearch.http.HttpTransportSettings.SETTING_HTTP_TCP_SEND_BUFFER_SIZE;
-import static org.opensearch.http.HttpTransportSettings.SETTING_PIPELINING_MAX_EVENTS;
 
 public class Netty4HttpServerTransport extends AbstractHttpServerTransport {
     private static final Logger logger = LogManager.getLogger(Netty4HttpServerTransport.class);
@@ -341,11 +341,6 @@ public class Netty4HttpServerTransport extends AbstractHttpServerTransport {
         "opensearch-http-server-channel"
     );
 
-    public static final AttributeKey<RestResponse> EARLY_RESPONSE = AttributeKey.newInstance("opensearch-http-early-response");
-    public static final AttributeKey<ThreadContext.StoredContext> CONTEXT_TO_RESTORE = AttributeKey.newInstance(
-        "opensearch-http-request-thread-context"
-    );
-
     protected static class HttpChannelHandler extends ChannelInitializer<Channel> {
 
         private final Netty4HttpServerTransport transport;
@@ -427,10 +422,10 @@ public class Netty4HttpServerTransport extends AbstractHttpServerTransport {
                     final ChannelPipeline pipeline = ctx.pipeline();
                     pipeline.addAfter(ctx.name(), "handler", getRequestHandler());
                     pipeline.replace(this, "header_verifier", transport.createHeaderVerifier());
-                    pipeline.addAfter("header_verifier", "decompress", transport.createDecompressor());
-                    pipeline.addAfter("decompress", "aggregator", aggregator);
+                    pipeline.addAfter("header_verifier", "decoder_compress", new HttpContentDecompressor());
+                    pipeline.addAfter("decoder_compress", "aggregator", aggregator);
                     if (handlingSettings.isCompression()) {
-                        pipeline.addAfter("aggregator", "compress", new HttpContentCompressor(handlingSettings.getCompressionLevel()));
+                        pipeline.addAfter("aggregator", "encoder_compress", new HttpContentCompressor(handlingSettings.getCompressionLevel()));
                     }
                     pipeline.addBefore("handler", "request_creator", requestCreator);
                     pipeline.addBefore("handler", "response_creator", responseCreator);
@@ -450,13 +445,13 @@ public class Netty4HttpServerTransport extends AbstractHttpServerTransport {
             decoder.setCumulator(ByteToMessageDecoder.COMPOSITE_CUMULATOR);
             pipeline.addLast("decoder", decoder);
             pipeline.addLast("header_verifier", transport.createHeaderVerifier());
-            pipeline.addLast("decompress", transport.createDecompressor());
+            pipeline.addLast("decoder_compress", new HttpContentDecompressor());
             pipeline.addLast("encoder", new HttpResponseEncoder());
             final HttpObjectAggregator aggregator = new HttpObjectAggregator(handlingSettings.getMaxContentLength());
             aggregator.setMaxCumulationBufferComponents(transport.maxCompositeBufferComponents);
             pipeline.addLast("aggregator", aggregator);
             if (handlingSettings.isCompression()) {
-                pipeline.addLast("compress", new HttpContentCompressor(handlingSettings.getCompressionLevel()));
+                pipeline.addLast("encoder_compress", new HttpContentCompressor(handlingSettings.getCompressionLevel()));
             }
             pipeline.addLast("request_creator", requestCreator);
             pipeline.addLast("response_creator", responseCreator);
@@ -497,10 +492,10 @@ public class Netty4HttpServerTransport extends AbstractHttpServerTransport {
                         .addLast("byte_buf_sizer", byteBufSizer)
                         .addLast("read_timeout", new ReadTimeoutHandler(transport.readTimeoutMillis, TimeUnit.MILLISECONDS))
                         .addLast("header_verifier", transport.createHeaderVerifier())
-                        .addLast("decompress", transport.createDecompressor());
+                        .addLast("decoder_decompress", new HttpContentDecompressor());
 
                     if (handlingSettings.isCompression()) {
-                        childChannel.pipeline().addLast("compress", new HttpContentCompressor(handlingSettings.getCompressionLevel()));
+                        childChannel.pipeline().addLast("encoder_compress", new HttpContentCompressor(handlingSettings.getCompressionLevel()));
                     }
 
                     childChannel.pipeline()
@@ -535,12 +530,9 @@ public class Netty4HttpServerTransport extends AbstractHttpServerTransport {
         }
     }
 
-    protected HttpContentDecompressor createDecompressor() {
-        return new HttpContentDecompressor();
-    }
-
     protected ChannelInboundHandlerAdapter createHeaderVerifier() {
+        return new Netty4Authorizer();
         // pass-through
-        return new ChannelInboundHandlerAdapter();
+//        return new ChannelInboundHandlerAdapter();
     }
 }

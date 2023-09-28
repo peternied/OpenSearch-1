@@ -16,17 +16,25 @@ import org.opensearch.test.OpenSearchIntegTestCase.ClusterScope;
 import org.opensearch.test.OpenSearchIntegTestCase.Scope;
 
 import java.util.Collection;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.IntStream;
 
+import io.netty.handler.codec.http.DefaultFullHttpRequest;
+import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpVersion;
 import io.netty.util.ReferenceCounted;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
+
+import io.netty.handler.codec.http2.HttpConversionUtil;
+import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
 
 @ClusterScope(scope = Scope.TEST, supportsDedicatedMasters = false, numDataNodes = 1)
 public class Netty4Http2IT extends OpenSearchNetty4IntegTestCase {
@@ -50,6 +58,30 @@ public class Netty4Http2IT extends OpenSearchNetty4IntegTestCase {
 
                 Collection<String> opaqueIds = Netty4HttpClient.returnOpaqueIds(responses);
                 assertOpaqueIdsInAnyOrder(5, opaqueIds);
+            } finally {
+                responses.forEach(ReferenceCounted::release);
+            }
+        }
+    }
+
+
+    public void testThatNettyHttpServerHandlesAuthenticateCheck() throws Exception {
+        HttpServerTransport httpServerTransport = internalCluster().getInstance(HttpServerTransport.class);
+        TransportAddress[] boundAddresses = httpServerTransport.boundAddress().boundAddresses();
+        TransportAddress transportAddress = randomFrom(boundAddresses);
+
+        final FullHttpRequest unauthorizedRequest = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/");
+        unauthorizedRequest.headers().add("blockme", "Not Allowed");
+        unauthorizedRequest.headers().add(HOST, "localhost");
+        unauthorizedRequest.headers().add(HttpConversionUtil.ExtensionHeaderNames.SCHEME.text(), "http");
+
+        
+        final List<FullHttpResponse> responses = new ArrayList<>();
+        try (Netty4HttpClient nettyHttpClient = Netty4HttpClient.http2()    ) {
+            try {
+                FullHttpResponse unauthorizedResponse = nettyHttpClient.send(transportAddress.address(), unauthorizedRequest);
+                responses.add(unauthorizedResponse);
+                assertThat(unauthorizedResponse.status().code(), equalTo(401));
             } finally {
                 responses.forEach(ReferenceCounted::release);
             }

@@ -54,12 +54,9 @@ class Netty4HttpRequestHandler extends SimpleChannelInboundHandler<HttpPipelined
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, HttpPipelinedRequest httpRequest) {
         final Netty4HttpChannel channel = ctx.channel().attr(Netty4HttpServerTransport.HTTP_CHANNEL_KEY).get();
-        final RestResponse earlyResponse = ctx.channel().attr(Netty4HttpServerTransport.EARLY_RESPONSE).get();
-        final ThreadContext.StoredContext contextToRestore = ctx.channel().attr(Netty4HttpServerTransport.CONTEXT_TO_RESTORE).get();
-        final RestHandlerContext requestContext = new RestHandlerContext(earlyResponse, contextToRestore);
         boolean success = false;
         try {
-            serverTransport.incomingRequest(httpRequest, channel, requestContext);
+            serverTransport.incomingRequest(httpRequest, channel);
             success = true;
         } finally {
             if (success == false) {
