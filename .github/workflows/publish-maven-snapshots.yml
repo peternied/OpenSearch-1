@@ -10,7 +10,7 @@ on:
 
 jobs:
   build-and-publish-snapshots:
-    if: github.repository == 'opensearch-project/OpenSearch'
+    # if: github.repository == 'opensearch-project/OpenSearch'
     runs-on: ubuntu-latest
 
     permissions:
@@ -25,16 +25,34 @@ jobs:
           distribution: adopt
           java-version: 17
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          role-to-assume: ${{ secrets.PUBLISH_SNAPSHOTS_ROLE }}
-          aws-region: us-east-1
-
-      - name: Publish snapshots to maven
+      - name: Extract version number
+        id: extract-version
         run: |
-          export SONATYPE_USERNAME=$(aws secretsmanager get-secret-value --secret-id maven-snapshots-username --query SecretString --output text)
-          export SONATYPE_PASSWORD=$(aws secretsmanager get-secret-value --secret-id maven-snapshots-password --query SecretString --output text)
-          echo "::add-mask::$SONATYPE_USERNAME"
-          echo "::add-mask::$SONATYPE_PASSWORD"
-          ./gradlew publishNebulaPublicationToSnapshotsRepository
+          FULL_VERSION=$(./gradlew properties | grep "version:" | awk '{print $2}')
+          SHORT_VERSION=$(echo $FULL_VERSION | sed -E 's/([0-9]+\.[0-9]+).*/\1/')
+          echo "::set-output name=current-version::$SHORT_VERSION"
+
+      - name: Check if Y.X branch matches an existing branch
+        id: check-branch
+        run: |
+          EXISTING_BRANCHES=$(git ls-remote --heads origin | cut -f2)
+          echo EXISTING_BRANCHES $EXISTING_BRANCHES
+          echo GITHUB_REF $GITHUB_REF
+          if [[ $GITHUB_REF =~ refs/heads/[0-9]+\.x && $EXISTING_BRANCHES =~ ${{ steps.extract-version.outputs.current-version }} ]]; then
+            echo "This branch should not publish as there is already a branch for ${{ steps.extract-version.outputs.current-version }}"
+            exit 1
+          fi
+
+      # - name: Configure AWS credentials
+      #   uses: aws-actions/configure-aws-credentials@v2
+      #   with:
+      #     role-to-assume: ${{ secrets.PUBLISH_SNAPSHOTS_ROLE }}
+      #     aws-region: us-east-1
+
+      # - name: Publish snapshots to maven
+      #   run: |
+      #     export SONATYPE_USERNAME=$(aws secretsmanager get-secret-value --secret-id maven-snapshots-username --query SecretString --output text)
+      #     export SONATYPE_PASSWORD=$(aws secretsmanager get-secret-value --secret-id maven-snapshots-password --query SecretString --output text)
+      #     echo "::add-mask::$SONATYPE_USERNAME"
+      #     echo "::add-mask::$SONATYPE_PASSWORD"
+      #     ./gradlew publishNebulaPublicationToSnapshotsRepository
