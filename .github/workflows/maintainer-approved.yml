@@ -1,4 +1,4 @@
-name: Check if maintainers have approved this PR
+name: Maintainers approval
 
 on:
   pull_request_review:
@@ -9,6 +9,7 @@ on:
 
 jobs:
   maintainer-approved-check:
+    name: Minimum approval count
     runs-on: ubuntu-latest
     steps:
       - id: find-maintainers
@@ -17,9 +18,10 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           result-encoding: string
           script: |
+            // Get the collaborators - filtered to maintainer permissions
             const maintainersResponse = await github.request('GET /repos/{owner}/{repo}/collaborators', {
-                owner: 'peternied',
-                repo: 'OpenSearch-1',
+                owner: context.repo.owner,
+                repo: context.repo.repo,
                 permission: 'maintain',
                 affiliation: 'all',
                 per_page: 100
