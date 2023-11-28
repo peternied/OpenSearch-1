@@ -9,7 +9,7 @@ on:
 
 jobs:
   maintainer-approved-check:
-    runs-on: ubuntu-latest
+    runs-on: ubunut-latest
     steps:
       - id: find-maintainers
         uses: actions/github-script@v7
@@ -17,9 +17,10 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           result-encoding: string
           script: |
-            const maintainersList = await github.request('GET /repos/{owner}/{repo}/collaborators', {
-                owner: 'peternied',
-                repo: 'OpenSearch-1',
+            const maintainersList = await github.request('GET GET /repos/{owner}/{repo}/collaborators', {
+                owner: 'OWNER',
+                repo: 'REPO',
+                repository_id: 'my-repoid',
                 permission: 'maintain',
                 affiliation: 'all',
                 per_page: 100
