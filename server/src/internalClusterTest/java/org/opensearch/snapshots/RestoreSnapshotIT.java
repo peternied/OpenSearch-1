@@ -312,7 +312,7 @@ public class RestoreSnapshotIT extends AbstractSnapshotIntegTestCase {
                 Settings.builder()
                     .put(indexSettings())
                     .put(SETTING_NUMBER_OF_REPLICAS, between(0, 1))
-                    .put("index.mapper.dynamic", true)
+                    // .put("index.mapper.dynamic", true)
                     .put("refresh_interval", 10, TimeUnit.SECONDS)
             )
         );

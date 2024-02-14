@@ -260,9 +260,9 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
         this.mapperRegistry = mapperRegistry;
         this.idFieldDataEnabled = idFieldDataEnabled;
 
-        // if (INDEX_MAPPER_DYNAMIC_SETTING.exists(indexSettings.getSettings())) {
-        //     throw new IllegalArgumentException("Setting " + INDEX_MAPPER_DYNAMIC_SETTING.getKey() + " was removed after version 6.0.0");
-        // }
+        if (INDEX_MAPPER_DYNAMIC_SETTING.exists(indexSettings.getSettings())) {
+            throw new IllegalArgumentException("Setting " + INDEX_MAPPER_DYNAMIC_SETTING.getKey() + " was removed after version 6.0.0");
+        }
     }
 
     public boolean hasNested() {
