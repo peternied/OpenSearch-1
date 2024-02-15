@@ -34,11 +34,16 @@ package org.opensearch.snapshots;
 
 import org.opensearch.action.admin.cluster.snapshots.create.CreateSnapshotResponse;
 import org.opensearch.action.admin.cluster.snapshots.restore.RestoreSnapshotResponse;
+import org.opensearch.action.admin.indices.close.CloseIndexResponse;
+import org.opensearch.action.admin.indices.get.GetIndexResponse;
+import org.opensearch.action.admin.indices.open.OpenIndexResponse;
 import org.opensearch.action.admin.indices.settings.get.GetSettingsResponse;
 import org.opensearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.opensearch.action.admin.indices.template.delete.DeleteIndexTemplateRequestBuilder;
 import org.opensearch.action.admin.indices.template.get.GetIndexTemplatesResponse;
 import org.opensearch.action.index.IndexRequestBuilder;
+import org.opensearch.action.index.IndexResponse;
+import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.client.Client;
 import org.opensearch.cluster.block.ClusterBlocks;
 import org.opensearch.cluster.metadata.IndexMetadata;
@@ -57,6 +62,7 @@ import org.opensearch.repositories.RepositoriesService;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -67,10 +73,12 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static org.hamcrest.Matchers.*;
 import static org.opensearch.cluster.metadata.IndexMetadata.SETTING_NUMBER_OF_REPLICAS;
 import static org.opensearch.cluster.metadata.IndexMetadata.SETTING_NUMBER_OF_SHARDS;
 import static org.opensearch.index.IndexSettings.INDEX_REFRESH_INTERVAL_SETTING;
 import static org.opensearch.index.IndexSettings.INDEX_SOFT_DELETES_SETTING;
+import static org.opensearch.index.mapper.MapperService.INDEX_MAPPER_DYNAMIC_SETTING;
 import static org.opensearch.index.query.QueryBuilders.matchQuery;
 import static org.opensearch.indices.recovery.RecoverySettings.INDICES_RECOVERY_MAX_BYTES_PER_SEC_SETTING;
 import static org.opensearch.test.hamcrest.OpenSearchAssertions.assertAcked;
@@ -78,14 +86,6 @@ import static org.opensearch.test.hamcrest.OpenSearchAssertions.assertHitCount;
 import static org.opensearch.test.hamcrest.OpenSearchAssertions.assertIndexTemplateExists;
 import static org.opensearch.test.hamcrest.OpenSearchAssertions.assertIndexTemplateMissing;
 import static org.opensearch.test.hamcrest.OpenSearchAssertions.assertRequestBuilderThrows;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
 
 public class RestoreSnapshotIT extends AbstractSnapshotIntegTestCase {
     public void testParallelRestoreOperations() {
@@ -274,127 +274,63 @@ public class RestoreSnapshotIT extends AbstractSnapshotIntegTestCase {
         assertThat(restoredIndexMetadata.getSettings().get(IndexMetadata.SETTING_HISTORY_UUID), notNullValue());
     }
 
-    public void testRestoreWithDifferentMappingsAndSettings() throws Exception {
+    public void testRestoreIndexWithInvalidSettings() throws Exception {
+        //noinspection deprecation
+        final String disallowedSetting = INDEX_MAPPER_DYNAMIC_SETTING.getKey();
+
         final String repoName = "test-repo";
-        final Path repoPath = randomRepoPath();
+        logger.info("--> creating repository {}", repoName);
+        createRepository(repoName, "fs");
 
-        // try (Stream<Path> contents = Files.list(repoPath.resolve("indices"))) {
-        //     contents.filter(Files::isRegularFile).forEach(file -> {
-        //         try {
-        //             Files.deleteIfExists(file);
-        //         } catch (IOException e) {
-        //             // TODO Auto-generated catch block
-        //             e.printStackTrace();
-        //         }
-        //     });
-        // }
-
-        logger.info("--> creating repository {} at {}", repoName, repoPath);
-
-        assertAcked(
-            client().admin()
-                .cluster()
-                .preparePutRepository(repoName)
-                .setType("fs")
-                .setSettings(
-                    Settings.builder()
-                        .put("location", repoPath)
-                        .put("compress", false)
-                        .put("chunk_size", randomIntBetween(100, 1000), ByteSizeUnit.BYTES)
-                )
-        );
-
-        logger.info("--> create index with baz field");
-        assertAcked(
-            prepareCreate(
-                "test-idx",
-                2,
-                Settings.builder()
-                    .put(indexSettings())
-                    .put(SETTING_NUMBER_OF_REPLICAS, between(0, 1))
-                    // .put("index.mapper.dynamic", true)
-                    .put("refresh_interval", 10, TimeUnit.SECONDS)
-            )
-        );
-
-        NumShards numShards = getNumShards("test-idx");
-
-        assertAcked(client().admin().indices().preparePutMapping("test-idx").setSource("baz", "type=text"));
+        logger.info("--> create valid index");
+        final String indexName = "test-idx";
+        assertAcked(prepareCreate(indexName, 2));
         ensureGreen();
 
         logger.info("--> snapshot it");
-        CreateSnapshotResponse createSnapshotResponse = clusterAdmin().prepareCreateSnapshot("test-repo", "test-snap")
+        final String snapshotName = "test-snap";
+        final CreateSnapshotResponse createSnapshotResponse = clusterAdmin().prepareCreateSnapshot(repoName, snapshotName)
             .setWaitForCompletion(true)
-            .setIndices("test-idx")
+            .setIndices(indexName)
             .get();
-        logger.info("***" + createSnapshotResponse.toString());
+        logger.info("--> delete the index");
+        cluster().wipeIndices(indexName);
 
-        logger.info("--> delete the index and recreate it with foo field");
-        cluster().wipeIndices("test-idx");
- 
-        final AtomicBoolean anyException = new AtomicBoolean(false);
-        try (Stream<Path> contents = Files.list(repoPath.resolve("indices"))) {
-            contents.filter(Files::isReadable).forEach(file -> {
-                try {
-                    logger.info(file + ", contents:");
-                    logger.info(Files.readString(file));
-                } catch (final Exception e) {
-                    // logger.info("Unable to print contents " + e.getMessage());
-                    anyException.set(true);
-                }
-            });
-            // noinspection OptionalGetWithoutIsPresent because we know there's a subdirectory
-            // deletedPath = contents.filter(Files::isDirectory).findAny().get();
-            // IOUtils.rm(deletedPath);
-        } 
+        logger.info("--> restore from the snapshot, with invalid setting");
+        final RestoreSnapshotResponse restoreSnapshotResponse = clusterAdmin().prepareRestoreSnapshot(repoName, snapshotName)
+            .setWaitForCompletion(true)
+            .setIndexSettings(Settings.builder()
+                .put(disallowedSetting, true)
+                .build())
+            .execute()
+            .actionGet();
+        final RestoreInfo restoreInfo = restoreSnapshotResponse.getRestoreInfo();
+        assertThat(restoreInfo.totalShards(), greaterThan(1));
+        assertThat(restoreInfo.status().getStatus(), is(200));
+        assertThat(restoreInfo.indices(), contains(indexName));
+//        assertThat(restoreInfo.failedShards(), is(0));
+        assertThat(restoreInfo.totalShards(), greaterThan(1));
 
-        if (anyException.get()) {
-            throw new RuntimeException("ERROR!");
-        }
+//        ensureGreen(indexName); Fails!
+        final GetIndexResponse getIndexResponse = client().admin().indices().prepareGetIndex().addIndices(indexName).execute().actionGet();
+        assertThat(getIndexResponse.settings().get(indexName).keySet(), hasItem(disallowedSetting));
 
-        // assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(), greaterThan(0));
-        // assertThat(
-        //     createSnapshotResponse.getSnapshotInfo().successfulShards(),
-        //     equalTo(createSnapshotResponse.getSnapshotInfo().totalShards())
-        // );
+        final IndexResponse indexDocResponse = client().prepareIndex().setIndex(indexName).setId("1").setSource(Map.of("hello", "world")).execute().actionGet();
+        assertThat(indexDocResponse.status().getStatus(), is(201));
 
-        logger.info("--> close index");
-        client().admin().indices().prepareClose("test-idx").get();
-
-        // assertAcked(
-        //     prepareCreate(
-        //         "test-idx",
-        //         2,
-        //         Settings.builder()
-        //             .put(SETTING_NUMBER_OF_SHARDS, numShards.numPrimaries)
-        //             .put(SETTING_NUMBER_OF_REPLICAS, between(0, 1))
-        //             .put("refresh_interval", 5, TimeUnit.SECONDS)
-        //     )
-        // );
-
-
-        // assertAcked(client().admin().indices()
-        //     .prepareUpdateSettings("test-idx")
-        //     .setSettings(Collections.singletonMap("index.mapper.dynamic", true))
-        //     .get());
-        // ensureGreen();
-
-
-        // logger.info("--> restore all indices from the snapshot");
-        // RestoreSnapshotResponse restoreSnapshotResponse = clusterAdmin().prepareRestoreSnapshot("test-repo", "test-snap")
-        //     .setWaitForCompletion(true)
-        //     .execute()
-        //     .actionGet();
-        // assertThat(restoreSnapshotResponse.getRestoreInfo().totalShards(), greaterThan(0));
-
-        // logger.info("--> assert that old mapping is restored");
-        // MappingMetadata mappings = clusterAdmin().prepareState().get().getState().getMetadata().getIndices().get("test-idx").mapping();
-        // assertThat(mappings.sourceAsMap().toString(), containsString("baz"));
-        // assertThat(mappings.sourceAsMap().toString(), not(containsString("foo")));
-
-        // logger.info("--> assert that old settings are restored");
-        // GetSettingsResponse getSettingsResponse = client().admin().indices().prepareGetSettings("test-idx").execute().actionGet();
-        // assertThat(getSettingsResponse.getSetting("test-idx", "index.refresh_interval"), equalTo("10s"));
+//        UnavailableShardsException[[test-idx][4] primary shard is not active Timeout: [1m], request: [BulkShardRequest [[test-idx][4]] containing [index {[test-idx][1], source[{"hello":"world"}]}]]]
+//        at __randomizedtesting.SeedInfo.seed([99DB3A9437238E30:30C13C28E3F9B985]:0)
+//        at app//org.opensearch.action.support.replication.TransportReplicationAction$ReroutePhase.retryBecauseUnavailable(TransportReplicationAction.java:1243)
+//        at app//org.opensearch.action.support.replication.TransportReplicationAction$ReroutePhase.doRun(TransportReplicationAction.java:1034)
+//        at app//org.opensearch.common.util.concurrent.AbstractRunnable.run(AbstractRunnable.java:52)
+//        at app//org.opensearch.action.support.replication.TransportReplicationAction$ReroutePhase$2.onTimeout(TransportReplicationAction.java:1198)
+//        at app//org.opensearch.cluster.ClusterStateObserver$ContextPreservingListener.onTimeout(ClusterStateObserver.java:394)
+//        at app//org.opensearch.cluster.ClusterStateObserver$ObserverClusterStateListener.onTimeout(ClusterStateObserver.java:294)
+//        at app//org.opensearch.cluster.service.ClusterApplierService$NotifyTimeout.run(ClusterApplierService.java:709)
+//        at app//org.opensearch.common.util.concurrent.ThreadContext$ContextPreservingRunnable.run(ThreadContext.java:854)
+//        at java.base@21.0.2/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+//        at java.base@21.0.2/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+//        at java.base@21.0.2/java.lang.Thread.run(Thread.java:1583)
     }
 
     public void testRestoreAliases() throws Exception {
