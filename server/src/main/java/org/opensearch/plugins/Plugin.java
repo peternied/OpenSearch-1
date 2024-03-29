@@ -104,12 +104,12 @@ public abstract class Plugin implements Closeable {
         return Optional.empty();
     }
 
-    /**
-     * Node level guice modules.
-     */
-    public Collection<Module> createGuiceModules() {
-        return Collections.emptyList();
-    }
+    // /**
+    //  * Node level guice modules.
+    //  */
+    // public Collection<Module> createGuiceModules() {
+    //     return Collections.emptyList();
+    // }
 
     /**
      * Node level services that will be automatically started/stopped/closed. This classes must be constructed

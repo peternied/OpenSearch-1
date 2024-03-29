@@ -283,7 +283,7 @@ public class PluginsService implements ReportingService<PluginsAndModules> {
     public Collection<Module> createGuiceModules() {
         List<Module> modules = new ArrayList<>();
         for (Tuple<PluginInfo, Plugin> plugin : plugins) {
-            modules.addAll(plugin.v2().createGuiceModules());
+//            modules.addAll(plugin.v2().createGuiceModules());
         }
         return modules;
     }
