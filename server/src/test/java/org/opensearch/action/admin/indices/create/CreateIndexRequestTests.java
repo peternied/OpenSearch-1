@@ -186,6 +186,59 @@ public class CreateIndexRequestTests extends OpenSearchTestCase {
         }
     }
 
+    public void testCreationDate() throws IOException {
+        // Test setting creation date directly
+        CreateIndexRequest request = new CreateIndexRequest("test-index");
+        long testDate = 1640995200000L; // January 1, 2022 00:00:00 UTC
+        request.creationDate(testDate);
+        assertEquals(Long.valueOf(testDate), request.creationDate());
+
+        // Test parsing creation date from JSON
+        try (XContentBuilder builder = MediaTypeRegistry.contentBuilder(randomFrom(XContentType.values()))) {
+            builder.startObject()
+                .field("creation_date", testDate)
+                .startObject("settings")
+                .field("number_of_shards", 1)
+                .endObject()
+                .endObject();
+
+            CreateIndexRequest parsedRequest = new CreateIndexRequest();
+            parsedRequest.source(builder);
+            assertEquals(Long.valueOf(testDate), parsedRequest.creationDate());
+        }
+
+        // Test invalid creation date type
+        try (XContentBuilder builder = MediaTypeRegistry.contentBuilder(randomFrom(XContentType.values()))) {
+            builder.startObject()
+                .field("creation_date", "invalid")
+                .endObject();
+
+            CreateIndexRequest invalidRequest = new CreateIndexRequest();
+            OpenSearchParseException e = expectThrows(
+                OpenSearchParseException.class,
+                () -> invalidRequest.source(builder)
+            );
+            assertThat(e.getMessage(), containsString("creation_date must be a number"));
+        }
+
+        // Test negative creation date
+        CreateIndexRequest negativeRequest = new CreateIndexRequest("test-index");
+        IllegalArgumentException e1 = expectThrows(
+            IllegalArgumentException.class,
+            () -> negativeRequest.creationDate(-1L)
+        );
+        assertThat(e1.getMessage(), containsString("creation date must be non-negative"));
+
+        // Test future creation date
+        CreateIndexRequest futureRequest = new CreateIndexRequest("test-index");
+        long futureDate = System.currentTimeMillis() + 86400000L; // 1 day in the future
+        IllegalArgumentException e2 = expectThrows(
+            IllegalArgumentException.class,
+            () -> futureRequest.creationDate(futureDate)
+        );
+        assertThat(e2.getMessage(), containsString("creation date cannot be in the future"));
+    }
+
     public static void assertMappingsEqual(Map<String, String> expected, Map<String, String> actual) throws IOException {
         assertEquals(expected.keySet(), actual.keySet());
 

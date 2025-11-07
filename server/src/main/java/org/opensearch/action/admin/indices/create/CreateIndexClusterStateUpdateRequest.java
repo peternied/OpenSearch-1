@@ -68,6 +68,8 @@ public class CreateIndexClusterStateUpdateRequest extends ClusterStateUpdateRequ
 
     private Context context;
 
+    private Long creationDate;
+
     private final Set<ClusterBlock> blocks = new HashSet<>();
 
     private ActiveShardCount waitForActiveShards = ActiveShardCount.DEFAULT;
@@ -95,6 +97,11 @@ public class CreateIndexClusterStateUpdateRequest extends ClusterStateUpdateRequ
 
     public CreateIndexClusterStateUpdateRequest context(Context context) {
         this.context = context;
+        return this;
+    }
+
+    public CreateIndexClusterStateUpdateRequest creationDate(Long creationDate) {
+        this.creationDate = creationDate;
         return this;
     }
 
@@ -140,6 +147,10 @@ public class CreateIndexClusterStateUpdateRequest extends ClusterStateUpdateRequ
 
     public Context context() {
         return context;
+    }
+
+    public Long creationDate() {
+        return creationDate;
     }
 
     public Set<ClusterBlock> blocks() {
@@ -213,6 +224,8 @@ public class CreateIndexClusterStateUpdateRequest extends ClusterStateUpdateRequ
             + aliases
             + ", context="
             + context
+            + ", creationDate="
+            + creationDate
             + ", blocks="
             + blocks
             + ", waitForActiveShards="

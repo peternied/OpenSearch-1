@@ -1072,7 +1072,12 @@ public class MetadataCreateIndexService {
         }
 
         if (indexSettingsBuilder.get(SETTING_CREATION_DATE) == null) {
-            indexSettingsBuilder.put(SETTING_CREATION_DATE, Instant.now().toEpochMilli());
+            Long creationDate = request.creationDate();
+            if (creationDate != null) {
+                indexSettingsBuilder.put(SETTING_CREATION_DATE, creationDate);
+            } else {
+                indexSettingsBuilder.put(SETTING_CREATION_DATE, Instant.now().toEpochMilli());
+            }
         }
         indexSettingsBuilder.put(IndexMetadata.SETTING_INDEX_PROVIDED_NAME, request.getProvidedName());
         indexSettingsBuilder.put(SETTING_INDEX_UUID, UUIDs.randomBase64UUID());

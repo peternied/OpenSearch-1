@@ -93,6 +93,7 @@ public class CreateIndexRequest extends AcknowledgedRequest<CreateIndexRequest> 
     public static final ParseField SETTINGS = new ParseField("settings");
     public static final ParseField ALIASES = new ParseField("aliases");
     public static final ParseField CONTEXT = new ParseField("context");
+    public static final ParseField CREATION_DATE = new ParseField("creation_date");
 
     private String cause = "";
 
@@ -105,6 +106,8 @@ public class CreateIndexRequest extends AcknowledgedRequest<CreateIndexRequest> 
     private final Set<Alias> aliases = new HashSet<>();
 
     private Context context;
+
+    private Long creationDate;
 
     private ActiveShardCount waitForActiveShards = ActiveShardCount.DEFAULT;
 
@@ -136,6 +139,9 @@ public class CreateIndexRequest extends AcknowledgedRequest<CreateIndexRequest> 
         waitForActiveShards = ActiveShardCount.readFrom(in);
         if (in.getVersion().onOrAfter(Version.V_2_17_0)) {
             context = in.readOptionalWriteable(Context::new);
+        }
+        if (in.getVersion().onOrAfter(Version.V_3_0_0)) {
+            creationDate = in.readOptionalLong();
         }
     }
 
@@ -535,6 +541,12 @@ public class CreateIndexRequest extends AcknowledgedRequest<CreateIndexRequest> 
                 aliases((Map<String, Object>) entry.getValue());
             } else if (CONTEXT.match(name, deprecationHandler)) {
                 context((Map<String, Object>) entry.getValue());
+            } else if (CREATION_DATE.match(name, deprecationHandler)) {
+                if (entry.getValue() instanceof Number) {
+                    creationDate(((Number) entry.getValue()).longValue());
+                } else {
+                    throw new OpenSearchParseException("creation_date must be a number, got [{}]", entry.getValue());
+                }
             } else {
                 throw new OpenSearchParseException("unknown key [{}] for create index", name);
             }
@@ -612,6 +624,27 @@ public class CreateIndexRequest extends AcknowledgedRequest<CreateIndexRequest> 
         return context;
     }
 
+    /**
+     * Sets the creation date for the index.
+     */
+    public CreateIndexRequest creationDate(long creationDate) {
+        if (creationDate < 0) {
+            throw new IllegalArgumentException("creation date must be non-negative, got: " + creationDate);
+        }
+        if (creationDate > System.currentTimeMillis()) {
+            throw new IllegalArgumentException("creation date cannot be in the future, got: " + creationDate);
+        }
+        this.creationDate = creationDate;
+        return this;
+    }
+
+    /**
+     * Gets the creation date for the index.
+     */
+    public Long creationDate() {
+        return creationDate;
+    }
+
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
@@ -637,6 +670,9 @@ public class CreateIndexRequest extends AcknowledgedRequest<CreateIndexRequest> 
         if (out.getVersion().onOrAfter(Version.V_2_17_0)) {
             out.writeOptionalWriteable(context);
         }
+        if (out.getVersion().onOrAfter(Version.V_3_0_0)) {
+            out.writeOptionalLong(creationDate);
+        }
     }
 
     @Override
@@ -658,6 +694,8 @@ public class CreateIndexRequest extends AcknowledgedRequest<CreateIndexRequest> 
             + '\''
             + ", context="
             + context
+            + ", creationDate="
+            + creationDate
             + ", waitForActiveShards="
             + waitForActiveShards
             + '}';
